@@ -1,12 +1,12 @@
 <?php
-/*
+/**
  * Author: Daniel Doezema
  * Author URI: http://dan.doezema.com
  * Version: 0.2 (Beta)
  * Description: This script is a tool developed to help ease migration of WordPress sites from one domain to another.
- */
-
-/**
+ * @copyright Copyright (c) 2010 Daniel Doezema. (http://dan.doezema.com)
+ * @license http://dan.doezema.com/licenses/new-bsd New BSD License
+ *
  * Copyright (c) 2010, Daniel Doezema
  * All rights reserved.
  *
@@ -37,30 +37,63 @@
 /* == CONFIG ======================================================= */
 
 // Authentication Password
-define('PASSWORD', 'ReplaceThisPassword');
+define('DDWPDC_PASSWORD', 'Replace-This-Password');
 
 // Cookie: Name: Authentication
-define('COOKIE_NAME_AUTH', 'WPDC_COOKIE_AUTH');
+define('DDWPDC_COOKIE_NAME_AUTH', 'WPDC_COOKIE_AUTH');
 
 // Cookie: Name: Expiration
-define('COOKIE_NAME_EXPIRE', 'WPDC_COOKIE_EXPIRE');
+define('DDWPDC_COOKIE_NAME_EXPIRE', 'WPDC_COOKIE_EXPIRE');
 
 // Cookie: Timeout (Default: 5 minutes)
-define('COOKIE_LIFETIME', 60 * 5);
+define('DDWPDC_COOKIE_LIFETIME', 60 * 5);
 
 /* == NAMESPACE CLASS ============================================== */
 
-// WordPress Domain Changer
 class DDWordPressDomainChanger {
 	
+	/**
+     * Actions that occurred during request.
+     *
+     * @var array
+     */
 	public $actions = array();
-	public $notices = array();
-	public $errors = array();
-	private $config = false;
 	
+	/**
+     * Notices that occurred during request.
+     *
+     * @var array
+     */
+	public $notices = array();
+	
+	/**
+     * Errors that occurred during request.
+     *
+     * @var array
+     */
+	public $errors = array();
+	
+	/**
+     * File contents of the wp-config.php file.
+     *
+     * @var string
+     */
+	private $config = '';
+	
+	/**
+     * Class Constructor
+     *
+     * @return void
+     */
 	public function __construct() {
 		$this->loadConfigFile();
 	}
+	
+	/**
+     * Gets a constant's value from the wp-config.php file (if loaded).
+     *
+     * @return mixed; false if not found.
+     */
 	public function getConfigConstant($constant) {
 		if($this->isConfigLoaded()) {
 			preg_match("!define\('".$constant."',[^']*'(.+?)'\);!", $this->config, $matches);
@@ -68,6 +101,11 @@ class DDWordPressDomainChanger {
 		}
 		return false;
 	}
+	/**
+     * Gets $table_prefix value from the wp-config.php file (if loaded).
+     *
+     * @return string;
+     */
 	public function getConfigTablePrefix() {
 		if($this->isConfigLoaded()) {
 			preg_match("!table_prefix[^=]*=[^']*'(.+?)';!", $this->config, $matches);
@@ -75,6 +113,12 @@ class DDWordPressDomainChanger {
 		}
 		return '';
 	}
+	
+	/**
+     * Gets the best guess of the "New Domain" based on this files location at runtime.
+     *
+     * @return string;
+     */
 	public function getNewDomain() {
 		$new_domain = str_replace('http://','', $_SERVER['SERVER_NAME']);
 		if(isset($_SERVER['SERVER_PORT']) && strlen($_SERVER['SERVER_PORT']) > 0 && $_SERVER['SERVER_PORT'] != 80) {
@@ -82,6 +126,12 @@ class DDWordPressDomainChanger {
 		}
 		return $new_domain;
 	}
+	
+	/**
+     * Gets the "siteurl" WordPress option (if possible).
+     *
+     * @return mixed; false if not found.
+     */
 	public function getOldDomain() {
 		if($this->isConfigLoaded()) {
 			$mysqli = @new mysqli($this->getConfigConstant('DB_HOST'), $this->getConfigConstant('DB_USER'), $this->getConfigConstant('DB_PASSWORD'), $this->getConfigConstant('DB_NAME'));
@@ -99,9 +149,21 @@ class DDWordPressDomainChanger {
 		}
 		return false;
 	}
+	
+	/**
+     * Returns true if the wp-config.php file was loaded successfully.
+     *
+     * @return bool;
+     */
 	public function isConfigLoaded() {
 		return (strlen($this->config) > 0);
 	}
+	
+	/**
+     * Attempts to load the wp-config.php file into $this->config
+     *
+     * @return void;
+     */
 	private function loadConfigFile() {
 		$this->config = file_get_contents(dirname(__FILE__).'/wp-config.php');
 		if(!$this->isConfigLoaded()) {
@@ -115,25 +177,27 @@ class DDWordPressDomainChanger {
 /* == START PROCEDURAL CODE ============================================== */
 
 // Config/Safety Check
-if(PASSWORD == 'ReplaceThisPassword') die('This script will remain disabled until the default password is changed.');
+if(DDWPDC_PASSWORD == 'Replace-This-Password') {
+    die('This script will remain disabled until the default password is changed.');
+}
 
 // Password Check -> Cookie Set -> Redirect
 if(isset($_POST['auth_password'])) {
 	// Try and obstruct brute force attacks by making each login attempt take 5 seconds.
 	sleep(5);
-	if(md5($_POST['auth_password']) == md5(PASSWORD)) {
-		$expire = time() + COOKIE_LIFETIME;
-		setcookie(COOKIE_NAME_AUTH, md5(PASSWORD), $expire);
-		setcookie(COOKIE_NAME_EXPIRE, $expire, $expire);
-		die('<a id="redirect" href="'.basename(__FILE__).'">Click Here (Javascript Redirect Is Not Working)</a><script type="text/javascript">window.location = "'.basename(__FILE__).'";</script>');
+	if(md5($_POST['auth_password']) == md5(DDWPDC_PASSWORD)) {
+		$expire = time() + DDWPDC_COOKIE_LIFETIME;
+		setcookie(DDWPDC_COOKIE_NAME_AUTH, md5(DDWPDC_PASSWORD), $expire);
+		setcookie(DDWPDC_COOKIE_NAME_EXPIRE, $expire, $expire);
+		die('<a href="'.basename(__FILE__).'">Click Here</a><script type="text/javascript">window.location = "'.basename(__FILE__).'";</script>');
 	}	
 }
 
-// Check for auth cookie with proper password
-$isAuthenticated = (isset($_COOKIE[COOKIE_NAME_AUTH]) && ($_COOKIE[COOKIE_NAME_AUTH] == md5(PASSWORD))) ? true : false;
+// Check for authentication cookie with the correct password
+$is_authenticated = (isset($_COOKIE[DDWPDC_COOKIE_NAME_AUTH]) && ($_COOKIE[DDWPDC_COOKIE_NAME_AUTH] == md5(DDWPDC_PASSWORD))) ? true : false;
 
 // Check if Authenticated
-if($isAuthenticated) {
+if($is_authenticated) {
 	$DDWPDC = new DDWordPressDomainChanger();
 	try {
 		// Start Conversion Process
@@ -162,38 +226,38 @@ if($isAuthenticated) {
 			}
 	
 			// Escape for Database
-			$DATA = array();
+			$data = array();
 			foreach($_POST as $key => $value) {
-			    $DATA[$key] = $mysqli->escape_string($value);
+			    $data[$key] = $mysqli->escape_string($value);
 	        }
 	        
 			// Update Options
-			$result = $mysqli->query('UPDATE '.$DATA['prefix'].'options SET option_value = REPLACE(option_value,"'.$DATA['old_domain'].'","'.$DATA['new_domain'].'");');
+			$result = $mysqli->query('UPDATE '.$data['prefix'].'options SET option_value = REPLACE(option_value,"'.$data['old_domain'].'","'.$data['new_domain'].'");');
 			if(!$result) {
 				throw new Exception($mysqli->error);
 			} else {
-				$DDWPDC->actions[] = 'Old domain ('.$DATA['old_domain'].') replaced with new domain ('.$DATA['new_domain'].') in '.$DATA['prefix'].'options.option_value';
+				$DDWPDC->actions[] = 'Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'options.option_value';
 			}
 	
 			// Update Post Content
-			$result = $mysqli->query('UPDATE '.$DATA['prefix'].'posts SET post_content = REPLACE(post_content,"'.$DATA['old_domain'].'","'.$DATA['new_domain'].'");');
+			$result = $mysqli->query('UPDATE '.$data['prefix'].'posts SET post_content = REPLACE(post_content,"'.$data['old_domain'].'","'.$data['new_domain'].'");');
 			if(!$result) {
 				throw new Exception($mysqli->error);
 			} else {
-				$DDWPDC->actions[] = 'Old domain ('.$DATA['old_domain'].') replaced with new domain ('.$DATA['new_domain'].') in '.$DATA['prefix'].'posts.post_content';
+				$DDWPDC->actions[] = 'Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'posts.post_content';
 			}
 			
 			// Update Post GUID
-			$result = $mysqli->query('UPDATE '.$DATA['prefix'].'posts SET guid = REPLACE(guid,"'.$DATA['old_domain'].'","'.$DATA['new_domain'].'");');
+			$result = $mysqli->query('UPDATE '.$data['prefix'].'posts SET guid = REPLACE(guid,"'.$data['old_domain'].'","'.$data['new_domain'].'");');
 			if(!$result) {
 				throw new Exception($mysqli->error);
 			} else {
-				$DDWPDC->actions[] = 'Old domain ('.$DATA['old_domain'].') replaced with new domain ('.$DATA['new_domain'].') in '.$DATA['prefix'].'posts.guid';
+				$DDWPDC->actions[] = 'Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'posts.guid';
 			}
 
 			// Update "upload_path"
 			$upload_dir = dirname(__FILE__).'/wp-content/uploads';
-			$result = $mysqli->query('UPDATE '.$DATA['prefix'].'options SET option_value = "'.$upload_dir.'" WHERE option_name="upload_path";');
+			$result = $mysqli->query('UPDATE '.$data['prefix'].'options SET option_value = "'.$upload_dir.'" WHERE option_name="upload_path";');
 			if(!$result) {
 				throw new Exception($mysqli->error);
 			} else {
@@ -201,7 +265,7 @@ if($isAuthenticated) {
 			}
 	
 			// Delete "recently_edited" option.
-			$result = $mysqli->query('DELETE FROM '.$DATA['prefix'].'options WHERE option_name="recently_edited";');
+			$result = $mysqli->query('DELETE FROM '.$data['prefix'].'options WHERE option_name="recently_edited";');
 			if(!$result) {
 				throw new Exception($mysqli->error);
 			} else {
@@ -224,7 +288,7 @@ if($isAuthenticated) {
 						var o = document.getElementById('seconds');
 						var b = document.getElementById('bar');
 						var s = parseInt(o.innerHTML);
-						var p = Math.round(s / <?= COOKIE_LIFETIME + 5; ?> * 100);
+						var p = Math.round(s / <?= DDWPDC_COOKIE_LIFETIME + 5; ?> * 100);
 						var c = '#00FF19';
 						if(p < 25) {
 							c = 'red';
@@ -262,9 +326,9 @@ if($isAuthenticated) {
 	    <h1>WordPress Domain Changer</h1>
     	<span>By <a href="http://dan.doezema.com" target="_blank">Daniel Doezema</a></span>
     	<div class="body">
-    		<?php if($isAuthenticated): ?>
+    		<?php if($is_authenticated): ?>
     			<div id="timeout">
-    				<div>You have <span id="seconds"><?= ((int) $_COOKIE[COOKIE_NAME_EXPIRE] + 5) - time();?></span> Seconds left in this session.</div>
+    				<div>You have <span id="seconds"><?= ((int) $_COOKIE[DDWPDC_COOKIE_NAME_EXPIRE] + 5) - time();?></span> Seconds left in this session.</div>
     				<div id="bar"></div>
     			</div>
     			<div class="clear"></div>
@@ -277,29 +341,29 @@ if($isAuthenticated) {
     						if($DDWPDC->isConfigLoaded())
     							$DDWPDC->actions[] = 'Attempting to auto-detect form field values.';
     						?>
-    						<label>Host</label>
-    						<div><input type="text" name="host" value="<?= $DDWPDC->getConfigConstant('DB_HOST'); ?>" /></div>
+    						<label for="host">Host</label>
+    						<div><input type="text" id="host" name="host" value="<?= $DDWPDC->getConfigConstant('DB_HOST'); ?>" /></div>
 	
-    						<label>User</label>
-    						<div><input type="text" name="username" value="<?= $DDWPDC->getConfigConstant('DB_USER'); ?>" /></div>
+    						<label for="username">User</label>
+    						<div><input type="text" id="username" name="username" value="<?= $DDWPDC->getConfigConstant('DB_USER'); ?>" /></div>
 	
-    						<label>Password</label>
-    						<div><input type="text" name="password" value="<?= $DDWPDC->getConfigConstant('DB_PASSWORD'); ?>" /></div>
+    						<label for="password">Password</label>
+    						<div><input type="text" id="password" name="password" value="<?= $DDWPDC->getConfigConstant('DB_PASSWORD'); ?>" /></div>
 					
-    						<label>Database Name</label>
-    						<div><input type="text" name="database"value="<?= $DDWPDC->getConfigConstant('DB_NAME'); ?>" /></div>
+    						<label for="database">Database Name</label>
+    						<div><input type="text" id="database" name="database" value="<?= $DDWPDC->getConfigConstant('DB_NAME'); ?>" /></div>
 				
-    						<label>Table Prefix</label>
-    						<div><input type="text" name="prefix" value="<?= $DDWPDC->getConfigTablePrefix(); ?>" /></div>
+    						<label for="prefix">Table Prefix</label>
+    						<div><input type="text" id="prefix" name="prefix" value="<?= $DDWPDC->getConfigTablePrefix(); ?>" /></div>
     					</blockquote>
 								
-    					<label>Old Domain</label>
-    					<div>http://<input type="text" name="old_domain" value="<?= $DDWPDC->getOldDomain(); ?>" /></div>
+    					<label for="old_domain">Old Domain</label>
+    					<div>http://<input type="text" id="old_domain" name="old_domain" value="<?= $DDWPDC->getOldDomain(); ?>" /></div>
 	
-    					<label>New Domain</label>
-    					<div>http://<input type="text" name="new_domain" value="<?= $DDWPDC->getNewDomain(); ?>" /></div>
+    					<label for="new_domain">New Domain</label>
+    					<div>http://<input type="text" id="new_domain" name="new_domain" value="<?= $DDWPDC->getNewDomain(); ?>" /></div>
 	
-    					<input type="submit" value="Submit!" />
+    					<input type="submit" id="submit_button" name="submit_button" value="Change Domain!" />
     				</form>
     			</div>
     			<div id="right">
@@ -319,11 +383,11 @@ if($isAuthenticated) {
     			<?if(isset($_POST['auth_password'])):?>
     				<div class="log error"><strong>Error:</strong> Incorrect password, please try again.</div>
     			<?endif;?>
-    			<form method="post" action="<?= basename(__FILE__);?>">
+    			<form id="login" name="login" method="post" action="<?= basename(__FILE__);?>">
     				<h3>Authenticate</h3>
-    				<label>Password</label>
-    				<input type="password" name="auth_password" value="" />
-    				<input type="submit" value="Submit!" onclick="this.value='Loading...';this.disabled=true" />
+    				<label for="auth_password">Password</label>
+    				<input type="password" id="auth_password" name="auth_password" value="" />
+    				<input type="submit" id="submit_button" name="submit_button" value="Submit!" onclick="this.value='Loading...';this.disabled=true" />
     			</form>
     		<?php endif; ?>
     	</div>
