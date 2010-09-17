@@ -3,7 +3,7 @@
  * Author: Daniel Doezema
  * Author URI: http://dan.doezema.com
  * Version: 0.2 (Beta)
- * Description: This script is a tool developed to help ease migration of WordPress sites from one domain to another.
+ * Description: This script was developed to help ease migration of WordPress sites from one domain to another.
  *
  * Copyright (c) 2010, Daniel Doezema
  * All rights reserved.
@@ -41,10 +41,10 @@
 define('DDWPDC_PASSWORD', 'Replace-This-Password');
 
 // Cookie: Name: Authentication
-define('DDWPDC_COOKIE_NAME_AUTH', 'WPDC_COOKIE_AUTH');
+define('DDWPDC_COOKIE_NAME_AUTH', 'DDWPDC_COOKIE_AUTH');
 
 // Cookie: Name: Expiration
-define('DDWPDC_COOKIE_NAME_EXPIRE', 'WPDC_COOKIE_EXPIRE');
+define('DDWPDC_COOKIE_NAME_EXPIRE', 'DDWPDC_COOKIE_EXPIRE');
 
 // Cookie: Timeout (Default: 5 minutes)
 define('DDWPDC_COOKIE_LIFETIME', 60 * 5);
@@ -53,11 +53,11 @@ define('DDWPDC_COOKIE_LIFETIME', 60 * 5);
 
 class DDWordPressDomainChanger {
 
-/**
- * Actions that occurred during request.
- *
- * @var array
- */
+    /**
+     * Actions that occurred during request.
+     *
+     * @var array
+     */
     public $actions = array();
 
     /**
@@ -102,6 +102,7 @@ class DDWordPressDomainChanger {
         }
         return false;
     }
+    
     /**
      * Gets $table_prefix value from the wp-config.php file (if loaded).
      *
@@ -182,9 +183,15 @@ if(DDWPDC_PASSWORD == 'Replace-This-Password') {
     die('This script will remain disabled until the default password is changed.');
 }
 
-// Password Check -> Cookie Set -> Redirect
+// Password Check -> Set Cookie -> Redirect
 if(isset($_POST['auth_password'])) {
-// Try and obstruct brute force attacks by making each login attempt take 5 seconds.
+    /**
+     * Try and obstruct brute force attacks by making each login attempt 
+     * take 5 seconds.This is total security-through-obscurity and can be 
+     * worked around fairly easily, it's just one more step.
+     *    
+     * MAKE SURE you remove this script after the domain change is complete.
+     */
     sleep(5);
     if(md5($_POST['auth_password']) == md5(DDWPDC_PASSWORD)) {
         $expire = time() + DDWPDC_COOKIE_LIFETIME;
@@ -194,34 +201,32 @@ if(isset($_POST['auth_password'])) {
     }
 }
 
-// Check for authentication cookie with the correct password
+// Authenticate
 $is_authenticated = (isset($_COOKIE[DDWPDC_COOKIE_NAME_AUTH]) && ($_COOKIE[DDWPDC_COOKIE_NAME_AUTH] == md5(DDWPDC_PASSWORD))) ? true : false;
 
-// Check if Authenticated
+// Check if user is authenticated
 if($is_authenticated) {
     $DDWPDC = new DDWordPressDomainChanger();
     try {
-    // Start Conversion Process
+        // Start change process
         if(isset($_POST) && is_array($_POST) && (count($_POST) > 0)) {
-        // Clean up data & check for empty fields
+            // Clean up data & check for empty fields
+            $POST = array();
             foreach($_POST as $key => $value) {
                 $value = trim($value);
-                if(strlen($value) <= 0) {
-                    throw new Exception('One or more of the fields was blank; all are required.');
-                }
-                if(get_magic_quotes_gpc()) {
-                    $value = stripslashes($value);
-                }
-                $_POST[$key] = $value;
+                if(strlen($value) <= 0) throw new Exception('One or more of the fields was blank; all are required.');
+                if(get_magic_quotes_gpc()) $value = stripslashes($value);
+                $POST[$key] = $value;
             }
 
             // Check for "http://" in the new domain
-            if(stripos($_POST['new_domain'], 'http://') !== false) {
+            if(stripos($POST['new_domain'], 'http://') !== false) {
+                // Let them correct this instead of assuming it's correct and removing the "http://".
                 throw new Exception('The "New Domain" field must not contain "http://"');
             }
 
             // DB Connection
-            $mysqli = @new mysqli($_POST['host'], $_POST['username'], $_POST['password'], $_POST['database']);
+            $mysqli = @new mysqli($POST['host'], $POST['username'], $POST['password'], $POST['database']);
             if(mysqli_connect_error()) {
                 throw new Exception('Unable to create database connection; most likely due to incorrect connection settings.');
             }
@@ -265,12 +270,12 @@ if($is_authenticated) {
                 $DDWPDC->actions[] = 'Option "upload_path" has been changed to "'.$upload_dir.'"';
             }
 
-            // Delete "recently_edited" option.
+            // Delete "recently_edited" option. (Will get regerated by WordPress)
             $result = $mysqli->query('DELETE FROM '.$data['prefix'].'options WHERE option_name="recently_edited";');
             if(!$result) {
                 throw new Exception($mysqli->error);
             } else {
-                $DDWPDC->actions[] = 'Option "recently_edited" has been deleted.';
+                $DDWPDC->actions[] = 'Option "recently_edited" has been deleted -> Will be regenerated by WordPress.';
             }
 
         }
@@ -286,41 +291,41 @@ if($is_authenticated) {
             window.onload = function() {
                 if(document.getElementById('seconds')) {
                     window.setInterval(function() {
-                        var o = document.getElementById('seconds');
-                        var b = document.getElementById('bar');
-                        var s = parseInt(o.innerHTML);
-                        var p = Math.round(s / <?= DDWPDC_COOKIE_LIFETIME + 5; ?> * 100);
-                        var c = '#00FF19';
-                        if(p < 25) {
-                            c = 'red';
-                        } else if (p < 75) {
-                            c = 'yellow';
+                        var seconds_elem = document.getElementById('seconds');
+                        var bar_elem     = document.getElementById('bar');
+                        var seconds      = parseInt(seconds_elem.innerHTML);
+                        var percentage   = Math.round(seconds / <?= DDWPDC_COOKIE_LIFETIME + 5; ?> * 100);
+                        var bar_color    = '#00FF19';
+                        if(percentage < 25) {
+                            bar_color = 'red';
+                        } else if (percentage < 75) {
+                            bar_color = 'yellow';
                         }
-                        if(s <= 0) window.location.reload();
-                        b.style.width = p + '%';
-                        b.style.backgroundColor = c;
-                        o.innerHTML = --s;
+                        if(seconds <= 0) window.location.reload();
+                        bar_elem.style.width = percentage + '%';
+                        bar_elem.style.backgroundColor = bar_color;
+                        seconds_elem.innerHTML = --seconds;
                     }, 1000);
                 }
             }
         </script>
         <style type="text/css">
-                body {font:14px Tahoma, Arial;}
-                div.clear {clear:both;}
-                h1 {padding:0; margin:0;}
-                h2, h3 {padding:0; margin:0 0 15px 0;}
-                form { display:block; padding:10px; margin-top:15px; background-color:#FCFCFC; border:1px solid gray;}
-                form label {font-weight:bold;}
-                form div {margin:0 15px 15px 0;}
-                form div input {width:80%;}
-                #left {width:35%;float:left;}
-                #right {margin-top:5px;float:right; width:63%; text-align:left;}
-                div.log {padding:5px 10px; margin:10px 0;}
-                div.error { background-color:#FFF8F8; border:1px solid red;}
-                div.notice { background-color:#FFFEF2; border:1px solid #FDC200;}
-                div.action { background-color:#F5FFF6; border:1px solid #01BE14;}
-                #timeout {padding:5px 10px 10px 10px; background-color:black; color:white; font-weight:bold;position:absolute;top:0;right:10px;}
-                #bar {height:10px;margin:5px 0 0 0;}
+            body {font:14px Tahoma, Arial;}
+            div.clear {clear:both;}
+            h1 {padding:0; margin:0;}
+            h2, h3 {padding:0; margin:0 0 15px 0;}
+            form { display:block; padding:10px; margin-top:15px; background-color:#FCFCFC; border:1px solid gray;}
+            form label {font-weight:bold;}
+            form div {margin:0 15px 15px 0;}
+            form div input {width:80%;}
+            #left {width:35%;float:left;}
+            #right {margin-top:5px;float:right; width:63%; text-align:left;}
+            div.log {padding:5px 10px; margin:10px 0;}
+            div.error { background-color:#FFF8F8; border:1px solid red;}
+            div.notice { background-color:#FFFEF2; border:1px solid #FDC200;}
+            div.action { background-color:#F5FFF6; border:1px solid #01BE14;}
+            #timeout {padding:5px 10px 10px 10px; background-color:black; color:white; font-weight:bold;position:absolute;top:0;right:10px;}
+            #bar {height:10px;margin:5px 0 0 0;}
         </style>
     </head>
     <body>
@@ -387,7 +392,7 @@ if($is_authenticated) {
                     <h3>Authenticate</h3>
                     <label for="auth_password">Password</label>
                     <input type="password" id="auth_password" name="auth_password" value="" />
-                    <input type="submit" id="submit_button" name="submit_button" value="Submit!" onclick="this.value='Loading...';this.disabled=true" />
+                    <input type="submit" id="submit_button" name="submit_button" value="Submit!" />
                 </form>
             <?php endif; ?>
         </div>
