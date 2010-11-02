@@ -39,7 +39,7 @@
 /* == CONFIG ======================================================= */
 
 // Authentication Password
-define('DDWPDC_PASSWORD', '111');
+define('DDWPDC_PASSWORD', 'Replace-This-Password');
 
 // Cookie: Name: Authentication
 define('DDWPDC_COOKIE_NAME_AUTH', 'DDWPDC_COOKIE_AUTH');
@@ -437,6 +437,7 @@ if($is_authenticated) {
             div.action { background-color:#F5FFF6; border:1px solid #01BE14;}
             #timeout {padding:5px 10px 10px 10px; background-color:black; color:white; font-weight:bold;position:absolute;top:0;right:10px;}
             #bar {height:10px;margin:5px 0 0 0;}
+            label em {color:gray;border-bottom:1px dotted gray}
         </style>
     </head>
     <body>
@@ -479,7 +480,7 @@ if($is_authenticated) {
                         <label for="new_domain">New Domain</label>
                         <div>http://<input type="text" id="new_domain" name="new_domain" value="<?= $DDWPDC->getNewDomain(); ?>" /></div>
                         
-                        <div><input type="checkbox" id="multisite" name="multisite" value="1" /><label for="multisite">Is this a Multi-Site? <em style="color:gray;border-bottom:1px dotted gray"><?= (is_array($DDWPDC->getMUTableNames()) && count($DDWPDC->getMUTableNames()) > 0) ? '<span title="The database contains table names in the [prefix]_[number]_* format.">We think it might be.</span>' : '<span title="The database does not contains any table names in the [prefix]_[number]_* format.">We don\'t think it is.</span>' ?></em></label></div>
+                        <div><input type="checkbox" id="multisite" name="multisite" value="1" /><label for="multisite">Is this a Multi-Site? <em><?= (is_array($DDWPDC->getMUTableNames()) && count($DDWPDC->getMUTableNames()) > 0) ? '<span title="The database contains table names in the [prefix]_[number]_* format.">We think it might be.</span>' : '<span title="The database does not contains any table names in the [prefix]_[number]_* format.">We don\'t think it is.</span>' ?></em></label></div>
 
                         <input type="submit" id="submit_button" name="submit_button" value="Change Domain!" />
                     </form>
