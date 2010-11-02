@@ -36,7 +36,7 @@
  * @license http://dan.doezema.com/licenses/new-bsd New BSD License
  */
 
-/* == CONFIG ======================================================= */
+/* == CONFIG ======================================================== */
 
 // Authentication Password
 define('DDWPDC_PASSWORD', 'Replace-This-Password');
@@ -50,7 +50,7 @@ define('DDWPDC_COOKIE_NAME_EXPIRE', 'DDWPDC_COOKIE_EXPIRE');
 // Cookie: Timeout (Default: 5 minutes)
 define('DDWPDC_COOKIE_LIFETIME', 60 * 5);
 
-/* == NAMESPACE CLASS ============================================== */
+/* == NAMESPACE CLASS =============================================== */
 
 class DDWordPressDomainChanger {
 
