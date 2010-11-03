@@ -41,13 +41,7 @@
 // Authentication Password
 define('DDWPDC_PASSWORD', 'Replace-This-Password');
 
-// Cookie: Name: Authentication
-define('DDWPDC_COOKIE_NAME_AUTH', 'DDWPDC_COOKIE_AUTH');
-
-// Cookie: Name: Expiration
-define('DDWPDC_COOKIE_NAME_EXPIRE', 'DDWPDC_COOKIE_EXPIRE');
-
-// Cookie: Timeout (Default: 5 minutes)
+// Session Timeout (Default: 5 minutes)
 define('DDWPDC_COOKIE_LIFETIME', 60 * 5);
 
 /* == NAMESPACE CLASS =============================================== */
@@ -90,21 +84,38 @@ class DDWordPressDomainChanger {
     private $mysqli = null;
 
     /**
+     * Mu Table Names
+     *
+     * @var string
+     */
+    private $mu_tables = null;
+
+    /**
      * Class Constructor
      *
      * @return void
      */
     public function __construct() {
         $this->loadConfigFile();
+        if(!$this->isRootDirWritable()) {
+            $this->notices[] = 'The "'.dirname($this->getConfigFilePath()).'" directory is not writable.';
+        }
+        if(!$this->isConfigFileWritable()) {
+            $this->notices[] = 'The "'.$this->getConfigFilePath().'" file is not writable.';
+        }
     }
 
+    // == PUBLIC METHODS ===============================================
+
     /**
-     * Returns the full content of the config file.
+     * Creates a backup of the config file (if possible).
      *
-     * @return string.
+     * @param mixed; string, the new file's basename; null, the default backup name.
+     * @return bool;
      */
-    public function getConfigContent() {
-        return $this->config;
+    public function createBackupConfigFile($new_file_name = null) {
+        $new_file = $new_file_name !== null ? (string) $new_file_name : $this->getConfigFilePath() . '.bak.'.microtime();
+        return @copy($this->getConfigFilePath(), $new_file);
     }
 
     /**
@@ -121,6 +132,24 @@ class DDWordPressDomainChanger {
     }
 
     /**
+     * Returns the full content of the config file.
+     *
+     * @return string.
+     */
+    public function getConfigContent() {
+        return $this->config;
+    }
+    
+    /**
+     * Gets the path/to/the/wp-config.php file.
+     *
+     * @return string;
+     */
+    public function getConfigFilePath() {
+        return dirname(__FILE__).'/wp-config.php';
+    }
+
+    /**
      * Gets $table_prefix value from the wp-config.php file (if loaded).
      *
      * @return string;
@@ -131,6 +160,51 @@ class DDWordPressDomainChanger {
             return (isset($matches[1])) ? $matches[1] : '';
         }
         return '';
+    }
+            
+    
+    /**
+     * Attempts to lazy load a connection to the mysql database based on the config file.
+     * If $this->getDatabase(...) has been called THAT mysqli object will be returned instead.
+     *
+     * @return mixed; MySQLi instance, false on failure to connect.
+     */
+    public function getDatabase() {
+        if($this->mysqli === null) {
+            if($this->isConfigLoaded()) {
+                $this->mysqli = @new mysqli($this->getConfigConstant('DB_HOST'), $this->getConfigConstant('DB_USER'), $this->getConfigConstant('DB_PASSWORD'), $this->getConfigConstant('DB_NAME'));
+                if(mysqli_connect_error()) {
+                    $this->notices[] = 'Unable to connect to this server\'s database using the settings from wp-config.php. Please check that it\'s properly configured.';
+                    $this->mysqli = false;
+                }
+            }
+        }
+        return ($this->mysqli instanceof mysqli) ? $this->mysqli : false;
+    }
+
+    /**
+     * Returns a array of WordPress MU table names.
+     *
+     * @return mixed; array, false on failure.
+     */
+    public function getMUTableNames() {
+        if (!isset($this->mu_tables)) {
+            if($mysqli = $this->getDatabase()) {
+                // Get any table matching (prefix.*_* => wp_1_posts, wp_10_posts)
+                $sql_db      = $mysqli->escape_string($this->getConfigConstant('DB_NAME'));
+                $sql_prefix  = str_replace(array('%', '_'), array('\%', '\_'), $mysqli->escape_string($this->getConfigTablePrefix()));
+                $result      = $mysqli->query('SHOW TABLES FROM `'.$sql_db.'` LIKE "'.$sql_prefix.'%\_%"');
+                if($result->num_rows > 0) {
+                    $this->mu_tables = array();
+                    while($row = $result->fetch_array()) {
+                        $this->mu_tables = $row[0];
+                    }
+                } else {
+                    $this->mu_tables = false;
+                }
+            }
+        }
+        return $this->mu_tables;
     }
 
     /**
@@ -170,7 +244,16 @@ class DDWordPressDomainChanger {
     }
 
     /**
-     * Returns true if the wp-config.php file was loaded successfully.
+     * Checks if the WordPress root directory is writable.
+     *
+     * @return bool;
+     */
+    public function isConfigFileWritable() {
+        return is_writable($this->getConfigFilePath());
+    }
+
+    /**
+     * Checks if the wp-config.php file has been loaded successfully.
      *
      * @return bool;
      */
@@ -179,62 +262,14 @@ class DDWordPressDomainChanger {
     }
 
     /**
-     * Returns a array of WordPress MU table names.
-     *
-     * @return mixed; array, false on failure.
-     */
-    public function getMUTableNames() {
-        static $tables;
-
-        if (!isset($tables)) {
-            $tables = false;
-
-            if($mysqli = $this->getDatabase()) {
-                // Get any table matching (prefix.*_* => wp_1_posts, wp_10_posts)
-                $sql_db      = $mysqli->escape_string($this->getConfigConstant('DB_NAME'));
-                $sql_prefix  = str_replace(array('%', '_'), array('\%', '\_'), $mysqli->escape_string($this->getConfigTablePrefix()));
-                $result      = $mysqli->query('SHOW TABLES FROM `'.$sql_db.'` LIKE "'.$sql_prefix.'%\_%"');
-                if($result->num_rows > 0) {
-                    $tables = array();
-                    while($row = $result->fetch_array()) {
-                        $tables[] = $row[0];
-                    }
-                }
-
-            }
-        }
-
-        return $tables;
-    }
-
-    /**
-     * Attempts to load the wp-config.php file into $this->config
-     *
-     * @return void;
-     */
-    private function loadConfigFile() {
-        $this->config = @file_get_contents(dirname(__FILE__).'/wp-config.php');
-        if(!$this->isConfigLoaded()) {
-            $this->errors[] = 'Unable to find "wp-config.php" ... Make sure the '.basename(__FILE__).' file is in the root WordPress directory.';
-        } else {
-            $this->actions[] = 'wp-config.php file successfully loaded.';
-        }
-    }
-
-    /**
-     * Attempt to overwrite the config file with new content.
+     * Checks if the WordPress root directory is writable.
      *
      * @return bool;
      */
-    public function writeToConfigFile($content) {
-        if ($f = @fopen(dirname(__FILE__).'/wp-config.php', 'w')) {
-            fwrite($f, $content);
-            fclose($f);
-            return true;
-        }
-        return false;
+    public function isRootDirWritable() {
+        return is_writable(dirname($this->getConfigFilePath()));
     }
-
+        
     /**
      * Overrides the class self::$mysqli property with a different MySQLi instance.
      *
@@ -243,24 +278,32 @@ class DDWordPressDomainChanger {
     public function setDatabase(mysqli $mysqli) {
         $this->mysqli = $mysqli;
     }
-
+        
     /**
-     * Attempts to lazy load a connection to the mysql database based on the config file.
+     * Attempts to overwrite the config file with $content.
      *
-     * @return mixed; MySQLi instance, false on failure to connect.
+     * @return bool;
      */
-    private function getDatabase() {
-        if($this->mysqli === null) {
-            if($this->isConfigLoaded()) {
-                $this->mysqli = @new mysqli($this->getConfigConstant('DB_HOST'), $this->getConfigConstant('DB_USER'), $this->getConfigConstant('DB_PASSWORD'), $this->getConfigConstant('DB_NAME'));
-                if(mysqli_connect_error()) {
-                    $this->notices[] = 'Unable to connect to this server\'s database using the settings from wp-config.php; check that it\'s properly configured.';
-                    $this->mysqli = false;
-                }
-            }
-        }
-        return ($this->mysqli instanceof mysqli) ? $this->mysqli : false;
+    public function writeToConfigFile($content) {
+        return @file_put_contents($this->getConfigFilePath(), $content);
     }
+       
+    // == PRIVATE METHODS ===============================================
+       
+    /**
+     * Attempts to load the wp-config.php file into $this->config
+     *
+     * @return void;
+     */
+    private function loadConfigFile() {
+        $this->config = @file_get_contents($this->getConfigFilePath());
+        if(!$this->isConfigLoaded()) {
+            $this->errors[] = 'Unable to find "wp-config.php" ... Make sure the '.basename(__FILE__).' file is in the root WordPress directory.';
+        } else {
+            $this->actions[] = 'wp-config.php file successfully loaded.';
+        }
+    }
+    
 }
 
 /* == START PROCEDURAL CODE ============================================== */
@@ -282,14 +325,14 @@ if(isset($_POST['auth_password'])) {
     sleep(5);
     if(md5($_POST['auth_password']) == md5(DDWPDC_PASSWORD)) {
         $expire = time() + DDWPDC_COOKIE_LIFETIME;
-        setcookie(DDWPDC_COOKIE_NAME_AUTH, md5(DDWPDC_PASSWORD), $expire);
-        setcookie(DDWPDC_COOKIE_NAME_EXPIRE, $expire, $expire);
+        setcookie('ddwpdc_auth', md5(DDWPDC_PASSWORD), $expire);
+        setcookie('ddwpdc_expire', $expire, $expire);
         die('<a href="'.basename(__FILE__).'">Click Here</a><script type="text/javascript">window.location = "'.basename(__FILE__).'";</script>');
     }
 }
 
 // Authenticate
-$is_authenticated = (isset($_COOKIE[DDWPDC_COOKIE_NAME_AUTH]) && ($_COOKIE[DDWPDC_COOKIE_NAME_AUTH] == md5(DDWPDC_PASSWORD))) ? true : false;
+$is_authenticated = (isset($_COOKIE['ddwpdc_auth']) && ($_COOKIE['ddwpdc_auth'] == md5(DDWPDC_PASSWORD))) ? true : false;
 
 // Check if user is authenticated
 if($is_authenticated) {
@@ -417,24 +460,26 @@ if($is_authenticated) {
                 }
                 $DDWPDC->actions[] = '[Multi-Site] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'sitemeta.meta_value';
 
-                // Attempt to updated the config file's "DOMAIN_CURRENT_SITE" constant.
-                // define( 'DOMAIN_CURRENT_SITE', 'my.livefairs' );
-                $replacements = 0;
-                $newConfig = preg_replace(
-                    '/define\s*\(\s*[\'\"]DOMAIN_CURRENT_SITE[\'\"]\s*,\s*[\'\"\-\.\w]+\s*\)/i',
-                    "define('DOMAIN_CURRENT_SITE', '{$data['new_domain']}')",
-                    $DDWPDC->getConfigContent(),
-                    -1,
-                    $replacements
-                );
-                if ($replacements > 0 && $DDWPDC->writeToConfigFile($newConfig)) {
-                    $DDWPDC->actions[] = '[Multi-Site] "DOMAIN_CURRENT_SITE" constant value changed from ('.$data['old_domain'].') to ('.$data['new_domain'].') in the config file';
-                }
-                else {
-                    $DDWPDC->errors[] = '[Multi-Site] "DOMAIN_CURRENT_SITE" constant value could not be updated in the config file. Please do this manually by opening wp-config.php and updating the value of "DOMAIN_CURRENT_SITE" from ('.$data['old_domain'].') to ('.$data['new_domain'].')';
+                // Create a backup of the current wp-config.php file.
+                $DDWPDC->actions[] = '[Multi-Site] Backing up the wp-config.php file.';
+                if($DDWPDC->createBackupConfigFile()) {
+                    /**
+                     * Attempt to updated the config file's "DOMAIN_CURRENT_SITE" constant.
+                     * define( 'DOMAIN_CURRENT_SITE', 'my.livefairs' );
+                     */
+                    $count      = 0;
+                    $find       = '/define\s*\(\s*[\'\"]DOMAIN_CURRENT_SITE[\'\"]\s*,\s*[\'\"\-\.\w]+\s*\)/i';
+                    $replace    = "define('DOMAIN_CURRENT_SITE', '{$data['new_domain']}')";
+                    $newConfig  = preg_replace($find, $replace, $DDWPDC->getConfigContent(), -1, $count);
+                    if (($count > 0) && $DDWPDC->writeToConfigFile($newConfig)) {
+                        $DDWPDC->actions[] = '[Multi-Site] "DOMAIN_CURRENT_SITE" constant value changed from ('.$data['old_domain'].') to ('.$data['new_domain'].') in the config file';
+                    } else {
+                        $DDWPDC->errors[] = '[Multi-Site] "DOMAIN_CURRENT_SITE" constant value could not be updated in the config file. Please do this manually by opening "wp-config.php" and updating the value of "DOMAIN_CURRENT_SITE" from ('.$data['old_domain'].') to ('.$data['new_domain'].')';
+                    }
+                } else {
+                    $DDWPDC->errors[] = '[Multi-Site] Unable to create a backup of the "wp-config.php" file. Thus, the "DOMAIN_CURRENT_SITE" constant value could not be updated in the config file. Please do this manually by opening "wp-config.php" and updating the value of "DOMAIN_CURRENT_SITE" from ('.$data['old_domain'].') to ('.$data['new_domain'].')';
                 }
             }
-
         }
     } catch (Exception $exception) {
         $DDWPDC->errors[] = $exception->getMessage();
@@ -492,7 +537,7 @@ if($is_authenticated) {
         <div class="body">
             <?php if($is_authenticated): ?>
                 <div id="timeout">
-                    <div>You have <span id="seconds"><?= ((int) $_COOKIE[DDWPDC_COOKIE_NAME_EXPIRE] + 5) - time();?></span> Seconds left in this session.</div>
+                    <div>You have <span id="seconds"><?= ((int) $_COOKIE['ddwpdc_expire'] + 5) - time();?></span> Seconds left in this session.</div>
                     <div id="bar"></div>
                 </div>
                 <div class="clear"></div>
@@ -526,7 +571,7 @@ if($is_authenticated) {
                         <label for="new_domain">New Domain</label>
                         <div>http://<input type="text" id="new_domain" name="new_domain" value="<?= $DDWPDC->getNewDomain(); ?>" /></div>
 
-                        <div><input type="checkbox" id="multisite" name="multisite" value="1" /><label for="multisite">Is this a Multi-Site? <em><?= (is_array($DDWPDC->getMUTableNames()) && count($DDWPDC->getMUTableNames()) > 0) ? '<span title="The database contains table names in the [prefix]_[number]_* format.">We think it might be.</span>' : '<span title="The database does not contains any table names in the [prefix]_[number]_* format.">We don\'t think it is.</span>' ?></em></label></div>
+                        <div><input type="checkbox" id="multisite" name="multisite" value="1" /><label for="multisite">Is this a Multi-Site? <em><?= (is_array($DDWPDC->getMUTableNames()) && (count($DDWPDC->getMUTableNames()) > 0)) ? '<span title="The database contains table names in the [prefix]_[number]_* format.">We think it might be.</span>' : '<span title="The database does not contains any table names in the [prefix]_[number]_* format.">We don\'t think it is.</span>' ?></em></label></div>
 
                         <input type="submit" id="submit_button" name="submit_button" value="Change Domain!" />
                     </form>
