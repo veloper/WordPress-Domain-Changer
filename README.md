@@ -1,3 +1,6 @@
+# WARNING: THIS IS A DEVELOPMENT/TRUNK BRANCH!
+There is no guarantee that this branch of WordPress Domain Changer will work -- in fact expect that it wont.
+
 # WordPress Domain Changer
 
 ## Purpose
