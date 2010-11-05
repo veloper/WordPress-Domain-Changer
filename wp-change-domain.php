@@ -39,10 +39,10 @@
 /* == CONFIG ======================================================== */
 
 // Authentication Password
-define('DDWPDC_PASSWORD', '111');
+define('DDWPDC_PASSWORD', 'Replace-This-Password');
 
 // Session Timeout (Default: 5 minutes)
-define('DDWPDC_COOKIE_LIFETIME', 60 * 25);
+define('DDWPDC_COOKIE_LIFETIME', 60 * 5);
 
 /* == NAMESPACE CLASS =============================================== */
 
@@ -509,9 +509,13 @@ if($is_authenticated) {
                 if(document.getElementById('seconds')) {
                     window.setInterval(function() {
                         var seconds_elem = document.getElementById('seconds');
+                        var seconds      = parseInt(seconds_elem.value);
+                        
+                        // Note: Calling window.location.reload() will resend <form> data -- not desired.
+                        if(seconds <= 0) window.location = window.location;
+                        
                         var minutes_elem = document.getElementById('minutes');
                         var bar_elem     = document.getElementById('bar');
-                        var seconds      = parseInt(seconds_elem.value);
                         var percentage   = Math.round(seconds / <?= DDWPDC_COOKIE_LIFETIME + 5; ?> * 100);
                         var bar_color    = '#00FF19';
                         if(percentage < 25) {
@@ -519,7 +523,6 @@ if($is_authenticated) {
                         } else if (percentage < 75) {
                             bar_color = 'yellow';
                         }
-                        if(seconds <= 0) window.location.reload();
                         bar_elem.style.width = percentage + '%';
                         bar_elem.style.backgroundColor = bar_color;
                         seconds_elem.value = --seconds;
