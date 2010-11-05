@@ -39,10 +39,10 @@
 /* == CONFIG ======================================================== */
 
 // Authentication Password
-define('DDWPDC_PASSWORD', 'Replace-This-Password');
+define('DDWPDC_PASSWORD', '111');
 
 // Session Timeout (Default: 5 minutes)
-define('DDWPDC_COOKIE_LIFETIME', 60 * 5);
+define('DDWPDC_COOKIE_LIFETIME', 60 * 25);
 
 /* == NAMESPACE CLASS =============================================== */
 
@@ -114,18 +114,21 @@ class DDWordPressDomainChanger {
      * @return bool;
      */
     public function createBackupConfigFile($new_file_name = null) {
-        $new_file = $new_file_name !== null ? (string) $new_file_name : $this->getConfigFilePath() . '.bak.'.microtime();
+        $new_file = $new_file_name !== null ? (string) $new_file_name : $this->getConfigFilePath() . '.bak.'.microtime(true);
         return @copy($this->getConfigFilePath(), $new_file);
     }
 
     /**
-     * Gets a constant's value from the wp-config.php file (if loaded).
+     * Gets a constant's value from the wp-config.php file (if loaded). If the
+     * the constant is found the returned value will ALWAYS be a string. Thus a
+     * constant like define('MULTISITE', true); will be returned => (string) "true"
      *
      * @return mixed; false if not found.
      */
     public function getConfigConstant($constant) {
         if($this->isConfigLoaded()) {
-            preg_match("!define\('".$constant."',[^']*'(.+?)'\);!", $this->config, $matches);
+            preg_match("/define\s*\(\s*[\'\"]{1}".$constant."[\'\"]{1}\s*,\s*[\'\"\-\.]*(.+?)'?\s*\);/", $this->config, $matches);
+            //'/define\s*\(\s*[\'\"]DOMAIN_CURRENT_SITE[\'\"]\s*,\s*[\'\"\-\.\w]+\s*\)/i';
             return (isset($matches[1])) ? $matches[1] : false;
         }
         return false;
@@ -197,7 +200,7 @@ class DDWordPressDomainChanger {
                 if($result->num_rows > 0) {
                     $this->mu_tables = array();
                     while($row = $result->fetch_array()) {
-                        $this->mu_tables = $row[0];
+                        $this->mu_tables[] = $row[0];
                     }
                 } else {
                     $this->mu_tables = false;
@@ -241,6 +244,15 @@ class DDWordPressDomainChanger {
             }
         }
         return false;
+    }
+
+    /**
+     * Checks if the WordPress root directory is writable.
+     *
+     * @return bool;
+     */
+    public function isMultiSite() {
+        return $this->getConfigConstant('MULTISITE') == 'true' ? true : false;
     }
 
     /**
@@ -410,65 +422,68 @@ if($is_authenticated) {
 
             // Updates for MU websites
             if (isset($data['multisite']) && ($data['multisite'] == '1')) {
+                // Update Blogs Domain
+                if(!$mysqli->query('UPDATE '.$data['prefix'].'blogs SET domain = REPLACE(domain,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
+                    throw new Exception($mysqli->error);
+                }
+                $DDWPDC->actions[] = '[Multi-Site Global] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'blogs.domain';
+
+                // Update Site Domain
+                if(!$mysqli->query('UPDATE '.$data['prefix'].'site SET domain = REPLACE(domain,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
+                    throw new Exception($mysqli->error);
+                }
+                $DDWPDC->actions[] = '[Multi-Site Global] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'site.domain';
+
+                // Update Site Meta
+                if(!$mysqli->query('UPDATE '.$data['prefix'].'sitemeta SET meta_value = REPLACE(meta_value,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
+                    throw new Exception($mysqli->error);
+                }
+                $DDWPDC->actions[] = '[Multi-Site Global] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'sitemeta.meta_value';
+                                
+                // Update [prefix]_[int]_* Tables
                 if(is_array($mu_tables = $DDWPDC->getMUTableNames())) {
                     foreach($mu_tables as $mu_table) {
-                        if(!preg_match('/^[a-z0-9]+\_[0-9]+\_(.+)/i', $mu_table, $mu_matches)) {
+                        if(!preg_match('/^[a-z0-9]+\_([0-9])+\_(.+)/i', $mu_table, $mu_matches)) {
                             continue;
                         }
-                        switch($mu_matches[1]) {
+                        $mu_table_type = $mu_matches[2];
+                        $mu_table_number = $mu_matches[1];
+                        switch($mu_matches[2]) {
                             case 'options':
                                 // Update Options
                                 if(!$mysqli->query('UPDATE '.$mu_table.' SET option_value = REPLACE(option_value,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
                                     throw new Exception($mysqli->error);
                                 }
-                                $DDWPDC->actions[] = '[Multi-Site] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$mu_table.'options.option_value';
+                                $DDWPDC->actions[] = '[Multi-Site #'.$mu_table_number.'] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$mu_table.'options.option_value';
                                 break;
                             case 'postmeta':
                                 // Update Post Meta
                                 if(!$mysqli->query('UPDATE '.$mu_table.' SET meta_value = REPLACE(meta_value,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
                                     throw new Exception($mysqli->error);
                                 }
-                                $DDWPDC->actions[] = '[Multi-Site] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$mu_table.'postmeta.meta_value';
+                                $DDWPDC->actions[] = '[Multi-Site #'.$mu_table_number.'] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$mu_table.'postmeta.meta_value';
                                 break;
                             case 'posts':
                                 // Update Posts GUID
                                 if(!$mysqli->query('UPDATE '.$mu_table.' SET guid = REPLACE(guid,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
                                     throw new Exception($mysqli->error);
                                 }
-                                $DDWPDC->actions[] = '[Multi-Site] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$mu_table.'posts.guid';
+                                $DDWPDC->actions[] = '[Multi-Site #'.$mu_table_number.'] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$mu_table.'posts.guid';
                             default:
                                 continue;
                         }
                     }
                 }
-
-                // Update Blogs Domain
-                if(!$mysqli->query('UPDATE '.$data['prefix'].'blogs SET domain = REPLACE(domain,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
-                    throw new Exception($mysqli->error);
-                }
-                $DDWPDC->actions[] = '[Multi-Site] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'blogs.domain';
-
-                // Update Site Domain
-                if(!$mysqli->query('UPDATE '.$data['prefix'].'site SET domain = REPLACE(domain,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
-                    throw new Exception($mysqli->error);
-                }
-                $DDWPDC->actions[] = '[Multi-Site] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'site.domain';
-
-                // Update Site Meta
-                if(!$mysqli->query('UPDATE '.$data['prefix'].'sitemeta SET meta_value = REPLACE(meta_value,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
-                    throw new Exception($mysqli->error);
-                }
-                $DDWPDC->actions[] = '[Multi-Site] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'sitemeta.meta_value';
-
+                
                 // Create a backup of the current wp-config.php file.
-                $DDWPDC->actions[] = '[Multi-Site] Backing up the wp-config.php file.';
+                $DDWPDC->actions[] = 'Backing up the wp-config.php file before edit attempt.';
                 if($DDWPDC->createBackupConfigFile()) {
                     /**
                      * Attempt to updated the config file's "DOMAIN_CURRENT_SITE" constant.
                      * define( 'DOMAIN_CURRENT_SITE', 'my.livefairs' );
                      */
                     $count      = 0;
-                    $find       = '/define\s*\(\s*[\'\"]DOMAIN_CURRENT_SITE[\'\"]\s*,\s*[\'\"\-\.\w]+\s*\)/i';
+                    $find       = "/define\s*\(\s*[\'\"]{1}DOMAIN_CURRENT_SITE[\'\"]{1}\s*,\s*[\'\"\-\.]*(.+?)'?\s*\)/i";
                     $replace    = "define('DOMAIN_CURRENT_SITE', '{$data['new_domain']}')";
                     $newConfig  = preg_replace($find, $replace, $DDWPDC->getConfigContent(), -1, $count);
                     if (($count > 0) && $DDWPDC->writeToConfigFile($newConfig)) {
@@ -488,14 +503,15 @@ if($is_authenticated) {
 ?>
 <html>
     <head>
-        <title>WordPress Domain Changer by Daniel Doezema &amp; Friends</title>
+        <title>WordPress Domain Changer by Daniel Doezema &amp; Collaborators</title>
         <script type="text/javascript" language="Javascript">
             window.onload = function() {
                 if(document.getElementById('seconds')) {
                     window.setInterval(function() {
                         var seconds_elem = document.getElementById('seconds');
+                        var minutes_elem = document.getElementById('minutes');
                         var bar_elem     = document.getElementById('bar');
-                        var seconds      = parseInt(seconds_elem.innerHTML);
+                        var seconds      = parseInt(seconds_elem.value);
                         var percentage   = Math.round(seconds / <?= DDWPDC_COOKIE_LIFETIME + 5; ?> * 100);
                         var bar_color    = '#00FF19';
                         if(percentage < 25) {
@@ -506,7 +522,8 @@ if($is_authenticated) {
                         if(seconds <= 0) window.location.reload();
                         bar_elem.style.width = percentage + '%';
                         bar_elem.style.backgroundColor = bar_color;
-                        seconds_elem.innerHTML = --seconds;
+                        seconds_elem.value = --seconds;
+                        minutes_elem.innerHTML = Math.ceil(seconds_elem.value / 60);
                     }, 1000);
                 }
             }
@@ -519,7 +536,8 @@ if($is_authenticated) {
             form { display:block; padding:10px; margin-top:15px; background-color:#FCFCFC; border:1px solid gray;}
             form label {font-weight:bold;}
             form div {margin:0 15px 15px 0;}
-            form div input[type="text"] {width:80%;}
+            form div input[type="text"] {width:80%;font-size:15px;}
+            form p {margin:0 0 10px 0; padding:0;}
             #left {width:35%;float:left;}
             #right {margin-top:5px;float:right; width:63%; text-align:left;}
             div.log {padding:5px 10px; margin:10px 0;}
@@ -533,22 +551,23 @@ if($is_authenticated) {
     </head>
     <body>
         <h1>WordPress Domain Changer</h1>
-        <span>By <a href="http://dan.doezema.com" target="_blank">Daniel Doezema</a> &amp; <a href="http://github.com/veloper/WordPress-Domain-Changer/network" target="_blank">Friends</a>.</span>
+        <span>By <a href="http://dan.doezema.com" target="_blank">Daniel Doezema</a> &amp; <a href="http://github.com/veloper/WordPress-Domain-Changer/network" target="_blank">Collaborators</a></span>
         <div class="body">
             <?php if($is_authenticated): ?>
                 <div id="timeout">
-                    <div>You have <span id="seconds"><?= ((int) $_COOKIE['ddwpdc_expire'] + 5) - time();?></span> Seconds left in this session.</div>
+                    <input type="hidden" id="seconds" name="seconds" value="<?= ((int) $_COOKIE['ddwpdc_expire'] + 5) - time();?>">
+                    <div>You have about <span id="minutes">...</span> Minutes left in this session.</div>
                     <div id="bar"></div>
                 </div>
                 <div class="clear"></div>
                 <div id="left">
                     <form method="post" action="<?= basename(__FILE__);?>">
+                        <?php if($DDWPDC->isConfigLoaded()): ?>
+                        <p><strong>Note:</strong> The fields below were populated using a combination of data obtained from your wp-config.php file and this script's current environment.</p>
+                        <p>It's very important that you check that all values below are accurate.</p>
+                        <?php endif; ?>
                         <h3>Database Connection Settings</h3>
                         <blockquote>
-                            <?php
-                            // Try to Auto-Detect Settings from wp-config.php file and pre-populate fields.
-                            if($DDWPDC->isConfigLoaded()) $DDWPDC->actions[] = 'Attempting to auto-detect form field values.';
-                            ?>
                             <label for="host">Host</label>
                             <div><input type="text" id="host" name="host" value="<?= $DDWPDC->getConfigConstant('DB_HOST'); ?>" /></div>
 
@@ -571,7 +590,7 @@ if($is_authenticated) {
                         <label for="new_domain">New Domain</label>
                         <div>http://<input type="text" id="new_domain" name="new_domain" value="<?= $DDWPDC->getNewDomain(); ?>" /></div>
 
-                        <div><input type="checkbox" id="multisite" name="multisite" value="1" /><label for="multisite">Is this a Multi-Site? <em><?= (is_array($DDWPDC->getMUTableNames()) && (count($DDWPDC->getMUTableNames()) > 0)) ? '<span title="The database contains table names in the [prefix]_[number]_* format.">We think it might be.</span>' : '<span title="The database does not contains any table names in the [prefix]_[number]_* format.">We don\'t think it is.</span>' ?></em></label></div>
+                        <div><input type="checkbox" id="multisite" name="multisite" value="1" /><label for="multisite">Is this a Multi-Site? <em><?= $DDWPDC->isMultiSite() ? '<span title="The MULTISITE constant exists and is set to TRUE">We think it is.</span>' : '<span title="The MULTISITE constant is either not set, or is set to FALSE">We don\'t think it is.</span>'; ?></em></label></div>
 
                         <input type="submit" id="submit_button" name="submit_button" value="Change Domain!" />
                     </form>
