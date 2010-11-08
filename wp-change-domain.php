@@ -661,7 +661,7 @@ if($is_authenticated) {
                         $DDWPDC->notices[] = '[Multi-Site] Unable to create a back up of the .htaccess file because of file permissions. Please manually edit the .htaccess file and change "RewriteBase '.$old_domain_path.'" to "RewriteBase '.$new_domain_path.'".';
                     }
                 } else {
-                    $DDWPDC->notices[] = '[Multi-Site] The .htaccess file does not exist. While this might not be an <em>error</em>, issues can still arise with your WordPress install.';
+                    $DDWPDC->notices[] = '[Multi-Site] The .htaccess file does not exist. While this might not be an error, issues can still arise with your WordPress install.';
                 }
             }
         }
