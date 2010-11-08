@@ -708,7 +708,7 @@ if($is_authenticated) {
             form { display:block; padding:10px; margin-top:15px; background-color:#FCFCFC; border:1px solid gray;}
             form label {font-weight:bold;}
             form div {margin:0 15px 15px 0;}
-            form div input[type="text"] {width:80%;font-size:15px;}
+            form div input[type="text"] {width:80%;}
             form p {margin:0 0 10px 0; padding:0;}
             #left {width:35%;float:left;}
             #right {margin-top:5px;float:right; width:63%; text-align:left;}
@@ -718,7 +718,9 @@ if($is_authenticated) {
             div.action { background-color:#F5FFF6; border:1px solid #01BE14;}
             #timeout {padding:5px 10px 10px 10px; background-color:black; color:white; font-weight:bold;position:absolute;top:0;right:10px;}
             #bar {height:10px;margin:5px 0 0 0;}
-            label em {color:gray;border-bottom:1px dotted gray}
+            label em {color:gray;border-bottom:1px dotted gray;font-weight:normal;}
+            div.drilldown {float:left;border-left:1px dotted gray;border-bottom:1px dotted gray;width:10px;height:10px;margin:0 5px 0 5px;}
+            div.eg {margin:-10px 0 10px 0;color:gray;}
         </style>
     </head>
     <body>
@@ -736,7 +738,7 @@ if($is_authenticated) {
                     <form method="post" action="<?= basename(__FILE__);?>" onsubmit="return confirm('Are you sure that you want to change the domain using these settings?');">
                         <?php if($DDWPDC->isConfigLoaded()): ?>
                         <p><strong>Note:</strong> The fields below were populated using a combination of data obtained from your wp-config.php file and this script's current environment.</p>
-                        <p style="text-align:center;text-decoration:underline">It's very important that you check that all values below are accurate.</p>
+                        <p style="text-align:center;text-decoration:underline">It's important that all values below are accurate.</p>
                         <?php endif; ?>
                         <h3>Database Connection Settings</h3>
                         <blockquote>
@@ -756,14 +758,16 @@ if($is_authenticated) {
                             <div><input type="text" id="prefix" name="prefix" value="<?= $DDWPDC->getConfigTablePrefix(); ?>" /></div>
                         </blockquote>
 
-                        <label for="old_domain">Old Domain <em>(+ Optional Path)</em></label>
+                        <label for="old_domain">Old Domain</label>
                         <div>http://<input type="text" id="old_domain" name="old_domain" value="<?= $DDWPDC->getOldDomain(); ?>" /></div>
-
-                        <label for="new_domain">New Domain <em>(+ Optional Path)</em></label>
+                        <div class="eg"><div class="drilldown"></div>(e.g., "example.com", "example.com/blog")</div>
+                        <label for="new_domain">New Domain</label>
                         <div>http://<input type="text" id="new_domain" name="new_domain" value="<?= $DDWPDC->getNewDomain(); ?>" /></div>
-
-                        <div><input type="checkbox" id="multisite" name="multisite" value="1" /><label for="multisite">Is this a Multi-Site? <em><?= $DDWPDC->isMultiSite() ? '<span title="The MULTISITE constant exists and is set to TRUE">We think it is.</span>' : '<span title="The MULTISITE constant is either not set, or is set to FALSE">We don\'t think it is.</span>'; ?></em></label></div>
-
+                        <div class="eg"><div class="drilldown"></div>(e.g., "example.com", "example.com/blog")</div>
+                        <?php if($DDWPDC->isMultiSite()): ?>
+                            <p>Based on your wp-config.php file it looks like you're running a WordPress Multi-Site install.</p>
+                            <div><div class="drilldown"></div><input type="checkbox" id="multisite" name="multisite" value="1" checked /><label for="multisite">Apply domain change to all sites.</label></div>
+                        <?php endif; ?>
                         <input type="submit" id="submit_button" name="submit_button" value="Change Domain!" />
                     </form>
                 </div>
