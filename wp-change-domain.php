@@ -720,7 +720,8 @@ if($is_authenticated) {
             #bar {height:10px;margin:5px 0 0 0;}
             label em {color:gray;border-bottom:1px dotted gray;font-weight:normal;}
             div.drilldown {float:left;border-left:1px dotted gray;border-bottom:1px dotted gray;width:10px;height:10px;margin:0 5px 0 5px;}
-            div.eg {margin:-10px 0 10px 0;color:gray;}
+            div.eg {margin:-10px 0 10px 0;padding-left:25px;color:gray;position:relative;font-size:0.8em;}
+            div.eg div.drilldown {position:absolute;top:0;left:0;}
         </style>
     </head>
     <body>
@@ -760,10 +761,10 @@ if($is_authenticated) {
 
                         <label for="old_domain">Old Domain</label>
                         <div>http://<input type="text" id="old_domain" name="old_domain" value="<?= $DDWPDC->getOldDomain(); ?>" /></div>
-                        <div class="eg"><div class="drilldown"></div>(e.g., "example.com", "example.com/blog")</div>
+                        <div class="eg"><div class="drilldown"></div>(e.g., "www.example.com", "www.example.com/blog", "blog.example.com")</div>
                         <label for="new_domain">New Domain</label>
                         <div>http://<input type="text" id="new_domain" name="new_domain" value="<?= $DDWPDC->getNewDomain(); ?>" /></div>
-                        <div class="eg"><div class="drilldown"></div>(e.g., "example.com", "example.com/blog")</div>
+                        <div class="eg"><div class="drilldown"></div>(e.g., "www.example.com", "www.example.com/blog", "blog.example.com")</div>
                         <?php if($DDWPDC->isMultiSite()): ?>
                             <p>Based on your wp-config.php file it looks like you're running a WordPress Multi-Site install.</p>
                             <div><div class="drilldown"></div><input type="checkbox" id="multisite" name="multisite" value="1" checked /><label for="multisite">Apply domain change to all sites.</label></div>
