@@ -364,7 +364,7 @@ class DDWordPressDomainChanger {
      * @return bool;
      */
     public function writeToConfigFile($content) {
-        return @file_put_contents($this->getConfigFilePath(), $content);
+        return (bool)@file_put_contents($this->getConfigFilePath(), $content);
     }
        
     // == PRIVATE METHODS ===============================================
