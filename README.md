@@ -49,4 +49,4 @@ http://dan.doezema.com/licenses/new-bsd/
 
 ## Contributors 
 
-[Alon Pe'er](http://alonpeer.com) - WordPress MU Implementation
+[Alon Pe'er](http://alonpeer.com), [Eric Butera](http://ericbutera.us)
