@@ -1,7 +1,7 @@
 <?php
 /**
  * Author: Daniel Doezema
- * Contributor: Alon Peer
+ * Contributor: Alon Peer, Eric Butera
  * Author URI: http://dan.doezema.com
  * Version: 1.0 (Beta 2)
  * Description: This script was developed to help ease migration of WordPress sites from one domain to another.
@@ -474,7 +474,7 @@ if($is_authenticated) {
             foreach($_POST as $key => $value) {
                 $data[$key] = $mysqli->escape_string($value);
             }
-
+            
             // Update Options
             if(!$mysqli->query('UPDATE '.$data['prefix'].'options SET option_value = REPLACE(option_value,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
                 throw new Exception($mysqli->error);
