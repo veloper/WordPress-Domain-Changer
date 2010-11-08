@@ -75,7 +75,7 @@ class DDWordPressDomainChanger {
      * @var string
      */
     private $config = '';
-
+    
     /**
      * MySQLi Object
      *
@@ -114,7 +114,7 @@ class DDWordPressDomainChanger {
      * @return bool;
      */
     public function createBackupConfigFile($new_file_name = null) {
-        $new_file = $new_file_name !== null ? (string) $new_file_name : $this->getConfigFilePath() . '.bak.'.microtime(true);
+        $new_file = $new_file_name !== null ? (string) $new_file_name : dirname($this->getConfigFilePath()).'/bak.'.microtime(true).'.wp-config.php';
         return @copy($this->getConfigFilePath(), $new_file);
     }
 
@@ -186,7 +186,7 @@ class DDWordPressDomainChanger {
     }
 
     /**
-     * Returns a array of WordPress MU table names.
+     * Returns a array of WordPress MU table names of the format: "[prefix]_[int]_*"
      *
      * @return mixed; array, false on failure.
      */
@@ -281,6 +281,73 @@ class DDWordPressDomainChanger {
     public function isRootDirWritable() {
         return is_writable(dirname($this->getConfigFilePath()));
     }
+    
+    /**
+     * Save any changes made self::$config back to the wp-config.php file.
+     *
+     * @return bool;
+     */
+    public function saveChangesToConfigFile() {
+        return $this->writeToConfigFile($this->getConfigContent());
+    }
+        
+    /**
+     * Sets a new value to an EXISTING constant defined in wp-config.php
+     *
+     * NOTE: The changes made by this method are only to self::$config. 
+     * When self::saveChangesToConfigFile() is call the changes get written 
+     * to the wp-config.php file.
+     *
+     * @param string;
+     * @param mixed; - Can't be an array, object, or resource type.  
+     * @return bool;
+     */ 
+    public function setConfigConstant($constant, $value) {
+        $count = 0;
+        $value = $this->getConstantValue($value);
+        if(is_string($value)) {
+            $find       = "/define\s*\(\s*[\'\"]{1}" . $constant . "[\'\"]{1}\s*,\s*[\'\"\-\.]*(.+?)[\'\"]?\s*\)/";
+            $replace    = "define('" . $constant . "', " . $value . " )";
+            $new_config = preg_replace($find, $replace, $this->getConfigContent(), -1, $count);
+            if($count > 0) {
+                $this->setConfigContent($new_config);
+            }
+        }
+        return ($count > 0) ? true : false;
+    }
+    
+    /**
+    * Sets the self::$config property's value.
+    *
+    * @param string;
+    * @return void;
+    */
+    public function setConfigContent($string) {
+        $this->config = $string;
+    }
+    
+    /**
+     * Sets a new string value to an EXISTING variable defined in wp-config.php
+     *
+     * NOTE: The changes made by this method are only to self::$config. 
+     * When self::saveChangesToConfigFile() is call the changes get written 
+     * to the wp-config.php file. 
+     *
+     * @param string;
+     * @param string; 
+     * @return bool;
+     */ 
+    public function setConfigVariable($variable, $string) {
+        $count  = 0;
+        $string = (string) $string;
+        $find       = '/\$' . $variable . "[^=]*=\s*['\"\-\.]*(.+?)['\"]?\s*\;/";
+        $replace    = "\$" . $variable . " = '" . $string . "';";
+        $new_config = preg_replace($find, $replace, $this->getConfigContent(), -1, $count);
+        if($count > 0) {
+            $this->setConfigContent($new_config);
+        }
+        return ($count > 0) ? true : false;
+    }
         
     /**
      * Overrides the class self::$mysqli property with a different MySQLi instance.
@@ -301,9 +368,31 @@ class DDWordPressDomainChanger {
     }
        
     // == PRIVATE METHODS ===============================================
-       
+    
     /**
-     * Attempts to load the wp-config.php file into $this->config
+     * Attempts to convert a given value into its string representation.
+     * 
+     * @param mixed; - Can't be an array, object, or resource type. 
+     * @return mixed; string on success, false on failure;
+     */
+    private function getConstantValue($mixed) {
+        $value = false;
+        if(is_float($mixed) || is_int($mixed)) {
+            $value = (string) $mixed;
+        } elseif(is_bool($mixed)) {
+            $value = $mixed ? 'true' : 'false';
+        } else if(is_string($mixed)) {
+            $value = "'".$mixed."'";
+        } else if(is_null($mixed)) {
+            $value = "null";
+        } else {
+            $value = false;
+        }
+        return $value;
+    }
+           
+    /**
+     * Attempts to load the wp-config.php file into seld::$config
      *
      * @return void;
      */
@@ -367,6 +456,10 @@ if($is_authenticated) {
                 throw new Exception('The "New Domain" field must not contain "http://"');
             }
 
+            // Trim and slahes off the new and old domain values.
+            $POST['old_domain'] = trim($POST['old_domain'], '/');
+            $POST['new_domain'] = trim($POST['new_domain'], '/');
+            
             // DB Connection
             $mysqli = @new mysqli($POST['host'], $POST['username'], $POST['password'], $POST['database']);
             if(mysqli_connect_error()) {
@@ -387,18 +480,18 @@ if($is_authenticated) {
                 throw new Exception($mysqli->error);
             }
             $DDWPDC->actions[] = 'Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'options.option_value';
+            
+            // Update Post GUID
+            if(!$mysqli->query('UPDATE '.$data['prefix'].'posts SET guid = REPLACE(guid,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
+                throw new Exception($mysqli->error);
+            }
+            $DDWPDC->actions[] = 'Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'posts.guid';
 
             // Update Post Content
             if(!$mysqli->query('UPDATE '.$data['prefix'].'posts SET post_content = REPLACE(post_content,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
                 throw new Exception($mysqli->error);
             }
             $DDWPDC->actions[] = 'Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'posts.post_content';
-
-            // Update Post GUID
-            if(!$mysqli->query('UPDATE '.$data['prefix'].'posts SET guid = REPLACE(guid,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
-                throw new Exception($mysqli->error);
-            }
-            $DDWPDC->actions[] = 'Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'posts.guid';
 
             // Update "upload_path"
             $upload_dir = dirname(__FILE__).'/wp-content/uploads';
@@ -422,23 +515,63 @@ if($is_authenticated) {
 
             // Updates for MU websites
             if (isset($data['multisite']) && ($data['multisite'] == '1')) {
+                /**
+                 * The Multi-Site tables "blogs" and "site" store the domain as "domain" and "path." Thus we 
+                 * need to so some magic here and split up the replace values.
+                 *
+                 * Case:
+                 *   Old Domain: "localhost/wordpress"
+                 *   New Domain: "localhost/blog"
+                 */
+                 
+                // Set the default values.
+                $old_domain_base = $data['old_domain'];
+                $new_domain_base = $data['new_domain'];
+                $old_domain_path = '/';
+                $new_domain_path = '/';
+                
+                // Check if the old_domain value looks something like this: "www.example.com/blog"
+                if(count($old_domain_parts = explode('/', $data['old_domain'])) > 1) {
+                    $old_domain_base = array_shift($old_domain_parts);
+                    $old_domain_path = '/'.implode('/', $old_domain_parts).'/';
+                }
+                // Check if the new_domain value looks something like this: "www.example.com/blog"
+                if(count($new_domain_parts = explode('/', $data['new_domain'])) > 1) {
+                    $new_domain_base = array_shift($new_domain_parts);
+                    $new_domain_path = '/'.implode('/', $new_domain_parts).'/';
+                }
+                
                 // Update Blogs Domain
-                if(!$mysqli->query('UPDATE '.$data['prefix'].'blogs SET domain = REPLACE(domain,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
+                if(!$mysqli->query('UPDATE '.$data['prefix'].'blogs SET domain = REPLACE(domain,"'.$old_domain_base.'","'.$new_domain_base.'");')) {
                     throw new Exception($mysqli->error);
                 }
-                $DDWPDC->actions[] = '[Multi-Site Global] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'blogs.domain';
-
+                $DDWPDC->actions[] = '[Multi-Site] Old domain ('.$old_domain_base.') replaced with new domain ('.$new_domain_base.') in '.$data['prefix'].'blogs.domain';
+                
+                // Update Blogs Path
+                $sql_blog_path_set = ($old_domain_path == '/') ? 'CONCAT("'.rtrim($new_domain_path, '/').'", path)' : 'REPLACE(path,"'.$old_domain_path.'","'.$new_domain_path.'")';
+                if(!$mysqli->query('UPDATE '.$data['prefix'].'blogs SET path = '.$sql_blog_path_set.';')) {
+                    throw new Exception($mysqli->error);
+                }
+                $DDWPDC->actions[] = '[Multi-Site] Old path ('.$old_domain_path.') replaced with new path ('.$new_domain_path.') in '.$data['prefix'].'blogs.path';
+                
                 // Update Site Domain
                 if(!$mysqli->query('UPDATE '.$data['prefix'].'site SET domain = REPLACE(domain,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
                     throw new Exception($mysqli->error);
                 }
-                $DDWPDC->actions[] = '[Multi-Site Global] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'site.domain';
+                $DDWPDC->actions[] = '[Multi-Site] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'site.domain';
+
+                // Update Site Path
+                $sql_site_path_set = ($old_domain_path == '/') ? 'CONCAT("'.rtrim($new_domain_path, '/').'", path)' : 'REPLACE(path,"'.$old_domain_path.'","'.$new_domain_path.'")';
+                if(!$mysqli->query('UPDATE '.$data['prefix'].'site SET path = '.$sql_site_path_set.';')) {
+                    throw new Exception($mysqli->error);
+                }
+                $DDWPDC->actions[] = '[Multi-Site] Old path ('.$old_domain_path.') replaced with new path ('.$new_domain_path.') in '.$data['prefix'].'site.path';                    
 
                 // Update Site Meta
                 if(!$mysqli->query('UPDATE '.$data['prefix'].'sitemeta SET meta_value = REPLACE(meta_value,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
                     throw new Exception($mysqli->error);
                 }
-                $DDWPDC->actions[] = '[Multi-Site Global] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'sitemeta.meta_value';
+                $DDWPDC->actions[] = '[Multi-Site] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'sitemeta.meta_value';
                                 
                 // Update [prefix]_[int]_* Tables
                 if(is_array($mu_tables = $DDWPDC->getMUTableNames())) {
@@ -454,21 +587,27 @@ if($is_authenticated) {
                                 if(!$mysqli->query('UPDATE '.$mu_table.' SET option_value = REPLACE(option_value,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
                                     throw new Exception($mysqli->error);
                                 }
-                                $DDWPDC->actions[] = '[Multi-Site #'.$mu_table_number.'] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$mu_table.'options.option_value';
+                                $DDWPDC->actions[] = '[Multi-Site #'.$mu_table_number.'] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$mu_table.'.option_value';
                                 break;
                             case 'postmeta':
                                 // Update Post Meta
                                 if(!$mysqli->query('UPDATE '.$mu_table.' SET meta_value = REPLACE(meta_value,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
                                     throw new Exception($mysqli->error);
                                 }
-                                $DDWPDC->actions[] = '[Multi-Site #'.$mu_table_number.'] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$mu_table.'postmeta.meta_value';
+                                $DDWPDC->actions[] = '[Multi-Site #'.$mu_table_number.'] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$mu_table.'.meta_value';
                                 break;
                             case 'posts':
-                                // Update Posts GUID
+                                // Update Post's GUID
                                 if(!$mysqli->query('UPDATE '.$mu_table.' SET guid = REPLACE(guid,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
                                     throw new Exception($mysqli->error);
                                 }
-                                $DDWPDC->actions[] = '[Multi-Site #'.$mu_table_number.'] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$mu_table.'posts.guid';
+                                $DDWPDC->actions[] = '[Multi-Site #'.$mu_table_number.'] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$mu_table.'.guid';
+                                
+                                // Update Posts Content
+                                if(!$mysqli->query('UPDATE '.$mu_table.' SET post_content = REPLACE(post_content,"'.$data['old_domain'].'","'.$data['new_domain'].'");')) {
+                                    throw new Exception($mysqli->error);
+                                }
+                                $DDWPDC->actions[] = '[Multi-Site #'.$mu_table_number.'] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$mu_table.'.post_content';
                             default:
                                 continue;
                         }
@@ -478,21 +617,51 @@ if($is_authenticated) {
                 // Create a backup of the current wp-config.php file.
                 $DDWPDC->actions[] = 'Backing up the wp-config.php file before edit attempt.';
                 if($DDWPDC->createBackupConfigFile()) {
-                    /**
-                     * Attempt to updated the config file's "DOMAIN_CURRENT_SITE" constant.
-                     * define( 'DOMAIN_CURRENT_SITE', 'my.livefairs' );
-                     */
-                    $count      = 0;
-                    $find       = "/define\s*\(\s*[\'\"]{1}DOMAIN_CURRENT_SITE[\'\"]{1}\s*,\s*[\'\"\-\.]*(.+?)'?\s*\)/i";
-                    $replace    = "define('DOMAIN_CURRENT_SITE', '{$data['new_domain']}')";
-                    $newConfig  = preg_replace($find, $replace, $DDWPDC->getConfigContent(), -1, $count);
-                    if (($count > 0) && $DDWPDC->writeToConfigFile($newConfig)) {
-                        $DDWPDC->actions[] = '[Multi-Site] "DOMAIN_CURRENT_SITE" constant value changed from ('.$data['old_domain'].') to ('.$data['new_domain'].') in the config file';
+                    // Attempt to updated the wp-config.php file.
+                    if($DDWPDC->setConfigConstant('DOMAIN_CURRENT_SITE', $new_domain_base)) {
+                        $DDWPDC->actions[] = '[Multi-Site] "DOMAIN_CURRENT_SITE" constant value changed from ('.$old_domain_base.') to ('.$new_domain_base.') in the config file.';
+                    }
+                    if($DDWPDC->setConfigConstant('PATH_CURRENT_SITE', $new_domain_path)) {
+                        $DDWPDC->actions[] = '[Multi-Site] "DOMAIN_CURRENT_PATH" constant value changed from ('.$old_domain_path.') to ('.$new_domain_path.') in the config file.';
+                    }
+                    if($DDWPDC->setConfigVariable('base', $new_domain_path)) {
+                        $DDWPDC->actions[] = '[Multi-Site] "$base" variable value changed from ('.$old_domain_path.') to ('.$new_domain_path.') in the config file.';
+                    }
+                    if ($DDWPDC->saveChangesToConfigFile()) {
+                        $DDWPDC->actions[] = '[Multi-Site] Changes successfully written to the wp-config.php file.';
                     } else {
-                        $DDWPDC->errors[] = '[Multi-Site] "DOMAIN_CURRENT_SITE" constant value could not be updated in the config file. Please do this manually by opening "wp-config.php" and updating the value of "DOMAIN_CURRENT_SITE" from ('.$data['old_domain'].') to ('.$data['new_domain'].')';
+                        $DDWPDC->notices[] = '[Multi-Site] Unable to write to the wp-config.php file. Please manually edit the wp-config.php file and update the following constants and variables:  "DOMAIN_CURRENT_SITE" => "'.$new_domain_base.'" -- "DOMAIN_CURRENT_PATH" => "'.$new_domain_path.'" -- "$base" => "'.$new_domain_path.'"';
                     }
                 } else {
-                    $DDWPDC->errors[] = '[Multi-Site] Unable to create a backup of the "wp-config.php" file. Thus, the "DOMAIN_CURRENT_SITE" constant value could not be updated in the config file. Please do this manually by opening "wp-config.php" and updating the value of "DOMAIN_CURRENT_SITE" from ('.$data['old_domain'].') to ('.$data['new_domain'].')';
+                    $DDWPDC->notices[] = '[Multi-Site] Unable to create a back up of the wp-config.php file because of file permissions. Please manually edit the wp-config.php file and update the following constants and variables: "DOMAIN_CURRENT_SITE" => "'.$new_domain_base.'" -- "DOMAIN_CURRENT_PATH" => "'.$new_domain_path.'" -- "$base" => "'.$new_domain_path.'"';
+                }
+                
+                // TODO: Put some of this block into the namespace object.
+                // Update .htaccess file
+                $DDWPDC->actions[] = '[Multi-Site] Backing up the .htaccess file before edit attempt.';
+                if(file_exists($htaccess_path = dirname(__FILE__).'/.htaccess')) {
+                    if(@copy($htaccess_path, dirname($htaccess_path).'/bak.'.microtime(true).'.htaccess')) {
+                        if(($htaccess_content = @file_get_contents($htaccess_path)) !== false){
+                            $count = 0;
+                            $htaccess_content = preg_replace('/RewriteBase\s+.+?\n/', 'RewriteBase '.$new_domain_path."\n", $htaccess_content, -1, $count);
+                            if($count > 0) {
+                                $DDWPDC->actions[] = '[Multi-Site] "RewriteBase '.$old_domain_path.'" changed to "RewriteBase '.$new_domain_path.'" in the .htaccess file.';
+                                if(@file_put_contents($htaccess_path, $htaccess_content)) {
+                                    $DDWPDC->actions[] = '[Multi-Site] Changes successfully written to the .htaccess file.';
+                                } else {
+                                    $DDWPDC->notices[] = '[Multi-Site] Unable to write to the .htaccess file. Please manually edit the .htaccess file and change "RewriteBase '.$old_domain_path.'" to "RewriteBase '.$new_domain_path.'".';
+                                }
+                            } else {
+                                $DDWPDC->notices[] = '[Multi-Site] The .htaccess file does not contained a "RewriteBase" directive. While this might not be an <em>error</em>, issues can still arise with your WordPress install.';
+                            }
+                        } else {
+                            $DDWPDC->notices[] = '[Multi-Site] Unable to read the .htaccess file because of file permissions. Please manually edit the .htaccess file and change "RewriteBase '.$old_domain_path.'" to "RewriteBase '.$new_domain_path.'".';
+                        }
+                    } else {
+                        $DDWPDC->notices[] = '[Multi-Site] Unable to create a back up of the .htaccess file because of file permissions. Please manually edit the .htaccess file and change "RewriteBase '.$old_domain_path.'" to "RewriteBase '.$new_domain_path.'".';
+                    }
+                } else {
+                    $DDWPDC->notices[] = '[Multi-Site] The .htaccess file does not exist. While this might not be an <em>error</em>, issues can still arise with your WordPress install.';
                 }
             }
         }
@@ -564,10 +733,10 @@ if($is_authenticated) {
                 </div>
                 <div class="clear"></div>
                 <div id="left">
-                    <form method="post" action="<?= basename(__FILE__);?>">
+                    <form method="post" action="<?= basename(__FILE__);?>" onsubmit="return confirm('Are you sure that you want to change the domain using these settings?');">
                         <?php if($DDWPDC->isConfigLoaded()): ?>
                         <p><strong>Note:</strong> The fields below were populated using a combination of data obtained from your wp-config.php file and this script's current environment.</p>
-                        <p>It's very important that you check that all values below are accurate.</p>
+                        <p style="text-align:center;text-decoration:underline">It's very important that you check that all values below are accurate.</p>
                         <?php endif; ?>
                         <h3>Database Connection Settings</h3>
                         <blockquote>
@@ -587,10 +756,10 @@ if($is_authenticated) {
                             <div><input type="text" id="prefix" name="prefix" value="<?= $DDWPDC->getConfigTablePrefix(); ?>" /></div>
                         </blockquote>
 
-                        <label for="old_domain">Old Domain</label>
+                        <label for="old_domain">Old Domain <em>(+ Optional Path)</em></label>
                         <div>http://<input type="text" id="old_domain" name="old_domain" value="<?= $DDWPDC->getOldDomain(); ?>" /></div>
 
-                        <label for="new_domain">New Domain</label>
+                        <label for="new_domain">New Domain <em>(+ Optional Path)</em></label>
                         <div>http://<input type="text" id="new_domain" name="new_domain" value="<?= $DDWPDC->getNewDomain(); ?>" /></div>
 
                         <div><input type="checkbox" id="multisite" name="multisite" value="1" /><label for="multisite">Is this a Multi-Site? <em><?= $DDWPDC->isMultiSite() ? '<span title="The MULTISITE constant exists and is set to TRUE">We think it is.</span>' : '<span title="The MULTISITE constant is either not set, or is set to FALSE">We don\'t think it is.</span>'; ?></em></label></div>
