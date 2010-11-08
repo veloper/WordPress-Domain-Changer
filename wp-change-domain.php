@@ -164,8 +164,7 @@ class DDWordPressDomainChanger {
         }
         return '';
     }
-            
-    
+        
     /**
      * Attempts to lazy load a connection to the mysql database based on the config file.
      * If $this->getDatabase(...) has been called THAT mysqli object will be returned instead.
@@ -642,7 +641,6 @@ if($is_authenticated) {
                 if(file_exists($htaccess_path = dirname(__FILE__).'/.htaccess')) {
                     if(@copy($htaccess_path, dirname($htaccess_path).'/bak.'.microtime(true).'.htaccess')) {
                         if(($htaccess_content = @file_get_contents($htaccess_path)) !== false){
-                            $count = 0;
                             $htaccess_content = preg_replace('/RewriteBase\s+.+?\n/', 'RewriteBase '.$new_domain_path."\n", $htaccess_content, -1, $count);
                             if($count > 0) {
                                 $DDWPDC->actions[] = '[Multi-Site] "RewriteBase '.$old_domain_path.'" changed to "RewriteBase '.$new_domain_path.'" in the .htaccess file.';
