@@ -35,14 +35,14 @@ Please Visit [This Page](http://dan.doezema.com/2010/04/wordpress-domain-change/
 13. Go to your site's home page at the new domain -- all should be working!
 14. Once the domain has been changed remove this script from the server!
 
-## What Happens During Execution
+## Execution Overview
 
 * The following database table fields are affected.
    * [prefix]options.option\_value
    * [prefix]posts.guid
    * [prefix]posts.post\_content
    * [prefix]usermeta.meta\_value
-   * If Multi-Site... 
+   * **If Multi-Site...** 
       * [prefix]blogs.domain
       * [prefix]blogs.path
       * [prefix]site.domain
