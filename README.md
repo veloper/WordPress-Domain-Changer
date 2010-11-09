@@ -24,13 +24,13 @@ Please Visit [This Page](http://dan.doezema.com/2010/04/wordpress-domain-change/
 5. Open up wp-change-domain.php in a text editor and scroll down to the "CONFIG" section.
 6. Under "Authentication Password" replace the default password with a VERY secure password of your choice.
 7. Upload wp-change-domain.php to the root directory of the WordPress site.
-   * Note: The root directory is where the wp-config.php is located.
+   1. Note: The root directory is where the wp-config.php is located.
 8. In a web browser go to: http://www.yourNewDomain.com/wp-change-domain.php
 9. Type in your password that you set in step 6 at the authentication prompt.
 10. You will now be presented with the domain changer form.
-   * The script will try and auto-detect all of the settings, but it's up to you to confirm they are all correct.
+   1. The script will try and auto-detect all of the settings, but it's up to you to confirm they are all correct.
 11. If the script detects that you're running a WordPress Multi-Site install then a checkbox will be visible.
-   * If checked, the domain change will be applied to **all** sites.
+   1. If checked, the domain change will be applied to **all** sites.
 12. Take one last look at the settings to verify that they are correct... then click the "Change Domain!" button.
 13. Go to your site's home page at the new domain -- all should be working!
 14. Once the domain has been changed remove this script from the server!
