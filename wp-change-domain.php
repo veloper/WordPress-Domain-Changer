@@ -117,7 +117,7 @@ class DDWordPressDomainChanger {
      */
     public function createBackupConfigFile($new_file_name = null) {
         $new_file = $new_file_name !== null ? (string) $new_file_name : dirname($this->getConfigFilePath()).'/bak.'.microtime(true).'.wp-config.php';
-        return @copy($this->getConfigFilePath(), $new_file);
+        return copy($this->getConfigFilePath(), $new_file);
     }
 
     /**
@@ -398,7 +398,7 @@ class DDWordPressDomainChanger {
      * @return void;
      */
     private function loadConfigFile() {
-        $this->config = @file_get_contents($this->getConfigFilePath());
+        $this->config = file_get_contents($this->getConfigFilePath());
         if(!$this->isConfigLoaded()) {
             $this->errors[] = 'Unable to find "wp-config.php" ... Make sure the '.basename(__FILE__).' file is in the root WordPress directory.';
         } else {
@@ -641,12 +641,12 @@ if($is_authenticated) {
                 // Update .htaccess file
                 $DDWPDC->actions[] = '[Multi-Site] Backing up the .htaccess file before edit attempt.';
                 if(file_exists($htaccess_path = dirname(__FILE__).'/.htaccess')) {
-                    if(@copy($htaccess_path, dirname($htaccess_path).'/bak.'.microtime(true).'.htaccess')) {
-                        if(($htaccess_content = @file_get_contents($htaccess_path)) !== false){
+                    if(copy($htaccess_path, dirname($htaccess_path).'/bak.'.microtime(true).'.htaccess')) {
+                        if(($htaccess_content = file_get_contents($htaccess_path)) !== false){
                             $htaccess_content = preg_replace('/RewriteBase\s+.+?\n/', 'RewriteBase '.$new_domain_path."\n", $htaccess_content, -1, $count);
                             if($count > 0) {
                                 $DDWPDC->actions[] = '[Multi-Site] "RewriteBase '.$old_domain_path.'" changed to "RewriteBase '.$new_domain_path.'" in the .htaccess file.';
-                                if(@file_put_contents($htaccess_path, $htaccess_content)) {
+                                if(file_put_contents($htaccess_path, $htaccess_content)) {
                                     $DDWPDC->actions[] = '[Multi-Site] Changes successfully written to the .htaccess file.';
                                 } else {
                                     $DDWPDC->notices[] = '[Multi-Site] Unable to write to the .htaccess file. Please manually edit the .htaccess file and change "RewriteBase '.$old_domain_path.'" to "RewriteBase '.$new_domain_path.'".';
