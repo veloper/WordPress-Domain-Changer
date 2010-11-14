@@ -44,6 +44,9 @@ define('DDWPDC_PASSWORD', 'Replace-This-Password');
 // Session Timeout (Default: 5 minutes)
 define('DDWPDC_COOKIE_LIFETIME', 60 * 5);
 
+// Show PHP Errors?
+define('DDWPDC_DEBUG', false);
+
 /* == NAMESPACE CLASS =============================================== */
 
 class DDWordPressDomainChanger {
@@ -365,7 +368,7 @@ class DDWordPressDomainChanger {
      * @return bool;
      */
     public function writeToConfigFile($content) {
-        return (bool)@file_put_contents($this->getConfigFilePath(), $content);
+        return (bool)file_put_contents($this->getConfigFilePath(), $content);
     }
        
     // == PRIVATE METHODS ===============================================
@@ -409,6 +412,11 @@ class DDWordPressDomainChanger {
 }
 
 /* == START PROCEDURAL CODE ============================================== */
+
+// Debug Enabled?
+ini_set( 'display_errors' , DDWPDC_DEBUG ? 1 : 0);
+error_reporting( DDWPDC_DEBUG ? E_ALL : 0);
+
 
 // Config/Safety Check
 if(DDWPDC_PASSWORD == 'Replace-This-Password') {
