@@ -97,11 +97,13 @@ class DDWordPressDomainChanger {
      */
     public function __construct() {
         $this->loadConfigFile();
-        if(!$this->isRootDirWritable()) {
-            $this->notices[] = 'The "'.dirname($this->getConfigFilePath()).'" directory is not writable.';
-        }
-        if(!$this->isConfigFileWritable()) {
-            $this->notices[] = 'The "'.$this->getConfigFilePath().'" file is not writable.';
+        if($this->isMultiSite()) {
+            if(!$this->isRootDirWritable()) {
+                $this->notices[] = 'The "'.dirname($this->getConfigFilePath()).'" directory is not writable.';
+            }
+            if(!$this->isConfigFileWritable()) {
+                $this->notices[] = 'The "'.$this->getConfigFilePath().'" file is not writable.';
+            }
         }
     }
 
