@@ -162,6 +162,47 @@ class DDWordPressDomainChanger {
     }
 
     /**
+    * Replace $find with $replace in a string segment and still keep the integrity of the PHP serialized string.
+    *
+    * Example:
+    *  ... s:13:"look a string"; ...  
+    *  serializedReplace('string', 'function', $serialized_string)
+    *  ... s:15:"look a function"; ...
+    *
+    * @param string;
+    * @param string;
+    * @param string;
+    * @return string;
+    */
+    public static function serializedStrReplace($find, $replace, $haystack) {
+        $length_diff = strlen($replace) - strlen($find);
+        $find_escaped = self::preg_quote($find, '!');
+        if(preg_match_all('!s:([0-9]+):"([^"]*?'.$find_escaped.'{1}.*?)";!', self::regExpSerializeEncode($haystack), $matches)) {
+            $matches = array_map(array(__CLASS__,'regExpSerializeDecode'), $matches);
+            $match_count = count($matches[0]);
+            for($i=0;$i<$match_count;$i++) {
+                $new_string = str_replace($find, $replace, $matches[2][$i], $replace_count);
+                $new_length = ((int) $matches[1][$i]) + ($length_diff * $replace_count);
+                $haystack = str_replace($matches[0][$i], 's:'.$new_length.':"'.$new_string.'"', $haystack);
+            }
+        }
+        return $haystack;
+    }
+
+    /**
+    * Enhanced version of preg_quote() that works properly in PHP < 5.3
+    *
+    * @param string;
+    * @param mixed; string, null default
+    * @return string;
+    */
+    public static function preg_quote($string, $delimiter = null) {
+        $string = preg_quote($string, $delimiter);
+        if(phpversion() < 5.3) $string = str_replace('-', '\-', $string);
+        return $string;
+    }
+
+    /**
      * Attempts to load the wp-config.php file into $this->config
      *
      * @return void;
@@ -174,6 +215,40 @@ class DDWordPressDomainChanger {
             $this->actions[] = 'wp-config.php file successfully loaded.';
         }
     }
+    
+    
+    /**
+    * Replaces any occurrence of " (double quote character) within the value 
+    * of a serialized string segment with [DOUBLE_QUOTE]. This allows for RegExp
+    * to properly capture string segment values in self::serializedStrReplace().
+    *
+    * Example:
+    *  ... s:13:"look "a" string"; ...  
+    *  regExpSerializeEncode($serialized_string)
+    *  ... s:13:"look [DOUBLE_QUOTE]a[DOUBLE_QUOTE] string"; ...
+    *  
+    * @param string;
+    * @return string;
+    */
+    private static function regExpSerializeEncode($string) {
+        if(preg_match_all('!s:[0-9]+:"(.+?)";!', $string, $matches)) {
+            foreach($matches[1] as $match) {
+                $string = str_replace($match, str_replace('"', '[DOUBLE_QUOTE]', $match), $string);
+            }
+        }
+        return $string;
+    }
+    
+    /**
+    * Undoes the changes that self::regExpSerializeEncode() made to a string.
+    *
+    * @see self::regExpSerializeEncode();
+    * @param string;
+    * @return string;
+    */
+    private static function regExpSerializeDecode($string) {
+        return str_replace('[DOUBLE_QUOTE]', '"', $string);
+    }    
 }
 
 /* == START PROCEDURAL CODE ============================================== */
@@ -237,13 +312,41 @@ if($is_authenticated) {
                 $data[$key] = $mysqli->escape_string($value);
             }
 
-            // Update Options
-            $result = $mysqli->query('UPDATE '.$data['prefix'].'options SET option_value = REPLACE(option_value,"'.$data['old_domain'].'","'.$data['new_domain'].'");');
-            if(!$result) {
+            /**
+            * Handle Serialized Values
+            *
+            * Before we update the options we need to find any option_values that have the
+            * old_domain stored within a serialized string.
+            */
+            if(!$result = $mysqli->query('SELECT * FROM '.$data['prefix'].'options WHERE option_value REGEXP "s:[0-9]+:\".*'.$mysqli->escape_string(DDWordPressDomainChanger::preg_quote($POST['old_domain'])).'.*\";"')) {
                 throw new Exception($mysqli->error);
-            } else {
-                $DDWPDC->actions[] = 'Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'options.option_value';
             }
+            $serialized_options = array();
+            $options_to_exclude = '';
+            if($result->num_rows > 0) {
+                // Build dataset
+                while(is_array($row = $result->fetch_assoc())) $serialized_options[] = $row;
+               
+                // Build Exclude SQL
+                foreach($serialized_options as $record) $options_to_exclude .= $record['option_id'].',';
+                $options_to_exclude = ' WHERE option_id NOT IN('.rtrim($options_to_exclude, ',').')';
+             
+                // Update Serialized Options
+                foreach($serialized_options as $record) {
+                    $new_option_value = DDWordPressDomainChanger::serializedStrReplace($data['old_domain'], $data['new_domain'], $record['option_value']);
+                    if(!$mysqli->query('UPDATE '.$data['prefix'].'options SET option_value = "'.$mysqli->escape_string($new_option_value).'" WHERE option_id='.(int)$record['option_id'].';')) {
+                        throw new Exception($mysqli->error);
+                    }
+                    $DDWPDC->actions[] = '[Serialize Replace] Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in option_name="'.$record['option_name'].'"';
+                }
+                
+            }
+            
+            // Update Options
+            if(!$mysqli->query('UPDATE '.$data['prefix'].'options SET option_value = REPLACE(option_value,"'.$data['old_domain'].'","'.$data['new_domain'].'")'.$options_to_exclude.';')) {
+                throw new Exception($mysqli->error);
+            }
+            $DDWPDC->actions[] = 'Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'options.option_value';
 
             // Update Post Content
             $result = $mysqli->query('UPDATE '.$data['prefix'].'posts SET post_content = REPLACE(post_content,"'.$data['old_domain'].'","'.$data['new_domain'].'");');
@@ -269,15 +372,6 @@ if($is_authenticated) {
             } else {
                 $DDWPDC->actions[] = 'Option "upload_path" has been changed to "'.$upload_dir.'"';
             }
-
-            // Delete "recently_edited" option. (Will get regerated by WordPress)
-            $result = $mysqli->query('DELETE FROM '.$data['prefix'].'options WHERE option_name="recently_edited";');
-            if(!$result) {
-                throw new Exception($mysqli->error);
-            } else {
-                $DDWPDC->actions[] = 'Option "recently_edited" has been deleted -> Will be regenerated by WordPress.';
-            }
-
         }
     } catch (Exception $exception) {
         $DDWPDC->errors[] = $exception->getMessage();
