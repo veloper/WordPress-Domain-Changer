@@ -383,8 +383,8 @@ class WPDC {
             $matches = array_map(array(__CLASS__,'regExpSerializeDecode'), $matches);
             $match_count = count($matches[0]);
             for($i=0;$i<$match_count;$i++) {
-                $new_string = str_replace($find, $replace, $matches[2][$i], $replace_count);
-                $new_length = ((int) $matches[1][$i]) + ($length_diff * $replace_count);
+                $new_string = str_replace($find, $replace, $matches[2][$i]);
+                $new_length = ((int) $matches[1][$i]) + $length_diff;
                 $haystack = str_replace($matches[0][$i], 's:'.$new_length.':"'.$new_string.'"', $haystack);
             }
         }
