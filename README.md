@@ -85,4 +85,4 @@ http://dan.doezema.com/licenses/new-bsd/
 
 ## Contributors 
 
-[Alon Pe'er](http://alonpeer.com), [Eric Butera](http://ericbutera.us)
+[Alon Pe'er](http://alonpeer.com), [Eric Butera](http://ericbutera.us), [Scott Walkinshaw](http://www.scottwalkinshaw.com)
