@@ -363,6 +363,13 @@ if($is_authenticated) {
             } else {
                 $DDWPDC->actions[] = 'Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'posts.guid';
             }
+            //Update post_meta
+            $result = $mysqli->query('UPDATE '.$data['prefix'].'postmeta SET meta_value = REPLACE(meta_value,"'.$data['old_domain'].'","'.$data['new_domain'].'");');
+            if(!$result) {
+                throw new Exception($mysqli->error);
+            } else {
+                $DDWPDC->actions[] = 'Old domain ('.$data['old_domain'].') replaced with new domain ('.$data['new_domain'].') in '.$data['prefix'].'postmeta.meta_value';
+            }
 
             // Update "upload_path"
             $upload_dir = dirname(__FILE__).'/wp-content/uploads';
