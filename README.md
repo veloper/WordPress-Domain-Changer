@@ -38,3 +38,11 @@ http://dan.doezema.com/2010/04/wordpress-domain-change/
 
 Wordpress Domain Changer is released under the New BSD license.
 http://dan.doezema.com/licenses/new-bsd/
+
+## Author
+
+[Daniel Doezema](http://dan.doezema.com)
+
+## Contributors 
+
+[Kevin deLeon](http://www.kevin-deleon.com/)
