@@ -45,5 +45,5 @@ http://dan.doezema.com/licenses/new-bsd/
 
 ## Contributors 
 
-[Kevin deLeon](http://www.kevin-deleon.com/)
-[mike-rsi](https://github.com/mike-rsi)
+* [Kevin deLeon](http://www.kevin-deleon.com/)
+* [mike-rsi](https://github.com/mike-rsi)
