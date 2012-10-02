@@ -38,7 +38,7 @@
 /* == CONFIG ======================================================= */
 
 // Authentication Password
-define('DDWPDC_PASSWORD', 'Replace-This-Password');
+define('DDWPDC_PASSWORD', '111');
 
 // Cookie: Name: Authentication
 define('DDWPDC_COOKIE_NAME_AUTH', 'DDWPDC_COOKIE_AUTH');
@@ -387,7 +387,7 @@ if($is_authenticated) {
 ?>
 <html>
     <head>
-        <title>WordPress Domain Changer by Daniel Doezema</title>
+        <title>WordPress Domain Changer by Daniel Doezema </title>
         <script type="text/javascript" language="Javascript">
             window.onload = function() {
                 if(document.getElementById('seconds')) {
@@ -430,7 +430,8 @@ if($is_authenticated) {
         </style>
     </head>
     <body>
-        <h1>WordPress Domain Changer</h1>
+        <h1>WordPress Domain Changer <iframe src="http://ghbtns.com/github-btn.html?user=veloper&repo=WordPress-Domain-Changer&type=watch&count=true"
+  allowtransparency="true" frameborder="0" scrolling="0" width="110px" height="20px"></iframe></h1>
         <span>By <a href="http://dan.doezema.com" target="_blank">Daniel Doezema</a></span>
         <div class="body">
             <?php if($is_authenticated): ?>
