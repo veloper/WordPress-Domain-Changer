@@ -38,7 +38,7 @@
 /* == CONFIG ======================================================= */
 
 // Authentication Password
-define('DDWPDC_PASSWORD', '111');
+define('DDWPDC_PASSWORD', 'Replace-This-Password');
 
 // Cookie: Name: Authentication
 define('DDWPDC_COOKIE_NAME_AUTH', 'DDWPDC_COOKIE_AUTH');
