@@ -132,7 +132,7 @@ class DDWordPressDomainChanger {
             for($i=0;$i<$match_count;$i++) {
                 $new_string = str_replace($find, $replace, $matches[2][$i], $replace_count);
                 $new_length = ((int) $matches[1][$i]) + ($length_diff * $replace_count);
-                $haystack = str_replace($matches[0][$i], 's:'.$new_length.':"'.$new_string.'"', $haystack);
+                $haystack = str_replace($matches[0][$i], 's:'.$new_length.':"'.$new_string.'";', $haystack);
             }
         }
         return $haystack;
