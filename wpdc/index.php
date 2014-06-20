@@ -159,7 +159,7 @@ if($is_authenticated) {
             }
 
             // Update "upload_path"
-            $upload_dir = dirname(__FILE__).'/wp-content/uploads';
+            $upload_dir = dirname( dirname(__FILE__) ).'/wp-content/uploads';
             $result = $mysqli->query('UPDATE '.$data['prefix'].'options SET option_value = "'.$upload_dir.'" WHERE option_name="upload_path";');
             if(!$result) {
                 throw new Exception($mysqli->error);
