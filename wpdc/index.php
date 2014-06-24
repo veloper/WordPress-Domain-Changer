@@ -76,7 +76,7 @@ if($is_authenticated) {
             $POST = array();
             foreach($_POST as $key => $value) {
                 $value = trim($value);
-                if(strlen($value) <= 0) throw new Exception('One or more of the fields was blank; all are required.');
+                if((strlen($value) <= 0)&&($key!='password')) throw new Exception('One or more of the fields was blank; all are required.');
                 if(get_magic_quotes_gpc()) $value = stripslashes($value);
                 $POST[$key] = $value;
             }
@@ -159,7 +159,7 @@ if($is_authenticated) {
             }
 
             // Update "upload_path"
-            $upload_dir = dirname(__FILE__).'/wp-content/uploads';
+            $upload_dir = dirname( dirname(__FILE__) ).'/wp-content/uploads';
             $result = $mysqli->query('UPDATE '.$data['prefix'].'options SET option_value = "'.$upload_dir.'" WHERE option_name="upload_path";');
             if(!$result) {
                 throw new Exception($mysqli->error);

@@ -157,7 +157,7 @@ class DDWordPressDomainChanger {
      * @return void;
      */
     private function loadConfigFile() {
-        $this->config = file_get_contents(dirname(__FILE__).'/wp-config.php');
+        $this->config = file_get_contents(dirname(__FILE__).'/../../wp-config.php');
         if(!$this->isConfigLoaded()) {
             $this->notices[] = 'Unable to find "wp-config.php" ... Make sure the '.basename(__FILE__).' file is in the root WordPress directory.';
         } else {
