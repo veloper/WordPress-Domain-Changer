@@ -20,10 +20,29 @@ A dependency-free tool developed to help ease migration of WordPress sites from 
 7. In a web browser go to: `http://www.your-new-domain.com/wpdc`
 8. Type in the password that you set in step 6 at the authentication prompt.
 9. You will now be presented with the domain changer form.
-    1. The script will try and auto-detect all of the settings, but it’s up to you to confirm they are all correct.
-10. Take one last look at the settings to verify that they are correct... then click the "Change Domain!"" button.
-11. Go to your site’s home page at the new domain — all should be working!
-12. Once the domain has been changed remove this `wpdc/` directory from the server!
+    1. The script will try to auto-detect all of the settings, but it’s up to you to confirm they are all correct.
+10. Take one last look at the settings and verify that they are all correct
+11. Click the "Change Domain!" button.
+12. Go to your site’s home page at the new domain — all should be working!
+13. Once the domain has been changed remove this `wpdc/` directory from the server!
+
+
+## Testing
+
+### OS X
+
+1. [Install Homebrew](https://github.com/Homebrew/homebrew/wiki/Installation)
+2. Install Composer
+
+        brew update
+        brew tap homebrew/homebrew-php
+        brew tap homebrew/dupes
+        brew tap homebrew/versions
+        brew install php55-intl
+        brew install homebrew/php/composer
+3. Run `./test.sh` from the command line.
+
+
 
 ## Website
 
