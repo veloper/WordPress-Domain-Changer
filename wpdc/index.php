@@ -34,15 +34,15 @@
  * @copyright Copyright (c) 2014 Daniel Doezema. (http://dan.doezema.com)
  * @license http://dan.doezema.com/licenses/new-bsd New BSD License
  */
-
 require 'classes/class.Controller.php';
 
 /* == START PROCEDURAL CODE ============================================== */
 
 $controller = new Controller();
+// echo "<pre>";
+// print_r($controller->getRequest());
+// die();
 
-$action = array_key_exists('action', (array)$_GET) ? $_GET['action'] : null;
 
-$controller->processRequestForAction($action);
 
-$controller->respondAndDie();
+$controller->handleRequestAndDie();

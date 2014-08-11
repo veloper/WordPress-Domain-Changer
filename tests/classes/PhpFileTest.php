@@ -1,5 +1,5 @@
 <?php
-require 'wpdc/classes/class.PhpFile.php';
+require_once 'wpdc/classes/class.PhpFile.php';
 
 class PhpFileTest extends PHPUnit_Framework_TestCase
 {
@@ -8,7 +8,7 @@ class PhpFileTest extends PHPUnit_Framework_TestCase
 
   public function setUp()
   {
-    $this->file = new PhpFile(realpath(dirname(__FILE__) . '/../support/test-wp-config.php'));
+    $this->file = new PhpFile(realpath(dirname(__FILE__) . '/../support/wp-config.php'));
   }
 
   public function testLoadingAFile()

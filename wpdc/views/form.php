@@ -1,51 +1,51 @@
-<div id="timeout">
-    <div>You have <span id="seconds"><?php echo ((int) $_COOKIE[DDWPDC_COOKIE_NAME_EXPIRE] + 5) - time(); ?></span> Seconds left in this session.</div>
-    <div id="bar"></div>
+<div class="col-md-6">
+
+  <div class="panel">
+    <div class="heading">
+      <h2 class="title engrave">WordPress Config File</h2>
+    </div>
+    <div class="body">
+      <h3>File Path</h3>
+      <p>&rarr; <?php echo $this->htmlSafe($config["file"]->getPath()) ?></p>
+      <h3>Database Settings <a href="javascript:void(0)" class="btn-primary btn-small">Use These Settings &raquo;</a></h3>
+      <p>&rarr; <strong><code>Constants</code></strong></p>
+      <ul>
+        <?php foreach($config["constants"] as $name => $value): ?>
+        <li><code><?php echo str_replace(" ", "&nbsp;", str_pad($this->htmlSafe($name), 13, " ")) ?> &rarr; <?php echo $this->htmlSafe($value) ?></code></li>
+        <?php endforeach; ?>
+      </ul>
+
+      <p>&rarr; <strong><code>Variables</code></strong></p>
+      <ul>
+        <?php foreach($config["variables"] as $name => $value): ?>
+        <li><code>$<?php echo str_replace(" ", "&nbsp;", str_pad($this->htmlSafe($name), 12, " ")) ?> &rarr; <?php echo $this->htmlSafe($value) ?></code></li>
+        <?php endforeach; ?>
+      </ul>
+
+    </div>
+  </div>
+
 </div>
-<div class="clear"></div>
-<div id="left">
-    <form method="post" action="<?php echo basename(__FILE__); ?>">
-        <h3>Database Connection Settings</h3>
-        <blockquote>
-            <?php
-            // Try to Auto-Detect Settings from wp-config.php file and pre-populate fields.
-            if($DDWPDC->isConfigLoaded()) $DDWPDC->actions[] = 'Attempting to auto-detect form field values.';
-            ?>
-            <label for="host">Host</label>
-            <div><input type="text" id="host" name="host" value="<?php echo $DDWPDC->getConfigConstant('DB_HOST'); ?>" /></div>
 
-            <label for="username">User</label>
-            <div><input type="text" id="username" name="username" value="<?php echo $DDWPDC->getConfigConstant('DB_USER'); ?>" /></div>
+<div class="col-md-6">
+  <div class="panel">
+    <div class="heading">
+      <h2 class="title engrave">Database Settings</h2>
+    </div>
+    <div class="body">
+      <form method="post" action="<?php echo $form_path ?>">
+        <?php foreach($fields as $field): ?>
+          <label for="<?php echo $field["name"] ?>"><?php echo $field["label"] ?></label>
+          <div><input class="form-field" type="text" id="host" name="<?php echo $field["name"] ?>" value="<?php echo $this->htmlSafe($field["value"]) ?>" /></div>
+        <?php endforeach; ?>
 
-            <label for="password">Password</label>
-            <div><input type="text" id="password" name="password" value="<?php echo $DDWPDC->getConfigConstant('DB_PASSWORD'); ?>" /></div>
-
-            <label for="database">Database Name</label>
-            <div><input type="text" id="database" name="database" value="<?php echo $DDWPDC->getConfigConstant('DB_NAME'); ?>" /></div>
-
-            <label for="prefix">Table Prefix</label>
-            <div><input type="text" id="prefix" name="prefix" value="<?php echo $DDWPDC->getConfigTablePrefix(); ?>" /></div>
-        </blockquote>
-
-        <label for="old_domain">Old Domain</label>
-        <div>http://<input type="text" id="old_domain" name="old_domain" value="<?php echo $DDWPDC->getOldDomain(); ?>" /></div>
-
-        <label for="new_domain">New Domain</label>
-        <div>http://<input type="text" id="new_domain" name="new_domain" value="<?php echo $DDWPDC->getNewDomain(); ?>" /></div>
-
-        <input type="submit" id="submit_button" name="submit_button" value="Change Domain!" />
-    </form>
+        <div class="row">
+          <button class="pull-right btn-primary" type="submit" id="submit" name="submit">Next &raquo;</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
-<div id="right">
-    <?php if(count($DDWPDC->errors) > 0): foreach($DDWPDC->errors as $error): ?>
-        <div class="log error"><strong>Error:</strong> <?php echo $error; ?></div>
-    <?php endforeach; endif; ?>
 
-    <?php if(count($DDWPDC->notices) > 0): foreach($DDWPDC->notices as $notice): ?>
-        <div class="log notice"><strong>Notice:</strong> <?php echo $notice; ?></div>
-    <?php endforeach; endif; ?>
 
-    <?php if(count($DDWPDC->actions) > 0): foreach($DDWPDC->actions as $action): ?>
-        <div class="log action"><strong>Action: </strong><?php echo $action; ?></div>
-    <?php endforeach; endif; ?>
-</div>
+
