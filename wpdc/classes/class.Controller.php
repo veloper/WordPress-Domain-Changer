@@ -6,11 +6,20 @@ class Controller extends BaseController {
     public function routes() {
         $this->addRoute( "GET" , "login"          , "login"         , array( "root" => true ));
         $this->addRoute( "POST", "login/submit"   , "loginSubmit");
-        $this->addRoute( "GET" , "database"       , "database"      , array( "auth" => false ) );
+        $this->addRoute( "GET" , "logout"         , "logout");
+        $this->addRoute( "GET" , "database"       , "database"      , array( "auth" => true ) );
         $this->addRoute( "POST", "database/submit", "databaseSubmit", array( "auth" => true ) );
         $this->addRoute( "GET" , "changer"        , "changer"       , array( "auth" => true ) );
         $this->addRoute( "POST", "changer/submit" , "changerSubmit" , array( "auth" => true ) );
         $this->addRoute( "GET" , "changer/success", "changerSuccess", array( "auth" => true ) );
+
+        // $this->addRoute( "POST", "database/check" , "databaseCheck" , array( "auth" => true ) );
+    }
+
+    public function beforeRequest()
+    {
+        parent::beforeRequest();
+        $this->data["logout_path"] = $this->getActionUrl("logout");
     }
 
 
@@ -32,26 +41,34 @@ class Controller extends BaseController {
         }
     }
 
+    public function logout()
+    {
+        $this->unsetSessionCookie();
+        $this->unsetAuthCookie();
+        $this->addFlash("success", "You've successully logged out.");
+        $this->redirectToAction("login");
+    }
+
     public function database() {
         $config = PhpFile::create('tests/support/wp-config.php');
 
         $this->data["fields"] = array(
-            array("name" => "host"         , "label" => "Hostname"      , "value" => $config->getConstant("DB_HOST")),
-            array("name" => "user"         , "label" => "Username"      , "value" => $config->getConstant("DB_USER")),
-            array("name" => "password"     , "label" => "Password"      , "value" => $config->getConstant("DB_PASSWORD")),
-            array("name" => "database"     , "label" => "Database Name" , "value" => $config->getConstant("DB_NAME")),
-            array("name" => "table_prefix" , "label" => "Table Prefix"  , "value" => $config->getVariable("table_prefix"))
+            array("name" => "host"         , "label" => "Hostname"      , "value" => $config->getConstant("DB_HOST")      , "req" => true),
+            array("name" => "user"         , "label" => "Username"      , "value" => $config->getConstant("DB_USER")      , "req" => true),
+            array("name" => "password"     , "label" => "Password"      , "value" => $config->getConstant("DB_PASSWORD")  , "req" => true),
+            array("name" => "database"     , "label" => "Database Name" , "value" => $config->getConstant("DB_NAME")      , "req" => true),
+            array("name" => "table_prefix" , "label" => "Table Prefix"  , "value" => $config->getVariable("table_prefix") , "req" => true)
         );
 
         $this->data["form_path"] = $this->getActionUrl( "databaseSubmit" );
 
         $this->data["config"] = array("file" => $config, "constants" => array(), "variables" => array());
-        foreach ( array( "DB_NAME", "DB_USER", "DB_PASSWORD", "DB_HOST" ) as $name )
+        foreach ( array( "DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME" ) as $name )
             $this->data["config"]["constants"][$name] = $config->getConstant( $name );
         foreach ( array( "table_prefix" ) as $name )
             $this->data["config"]["variables"][$name] = $config->getVariable( $name );
 
-        return $this->render( "form" );
+        return $this->render( "database" );
     }
 
     public function databaseSubmit()

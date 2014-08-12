@@ -8,9 +8,18 @@
     <div id="header">
       <div class="container">
         <div class="row">
-          <div class="inner engrave">
-            <h1>WordPress Domain Changer <iframe src="http://ghbtns.com/github-btn.html?user=veloper&repo=WordPress-Domain-Changer&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="110px" height="20px"></iframe></h1>
-            <em>By <a href="http://dan.doezema.com" target="_blank">Daniel Doezema</a></em>
+          <div class="col-md-8">
+            <div class="inner engrave">
+              <h1>WordPress Domain Changer <iframe src="http://ghbtns.com/github-btn.html?user=veloper&repo=WordPress-Domain-Changer&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="110px" height="20px"></iframe></h1>
+              <em>By <a href="http://dan.doezema.com" target="_blank">Daniel Doezema</a></em>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="header-block">
+              <?php if($request->authenticated) : ?>
+                <a class="btn-primary pull-right" href="<?php echo $logout_path; ?>">Logout</a>
+              <?php endif; ?>
+            </div>
           </div>
         </div>
       </div>
@@ -24,7 +33,9 @@
           <div class="row">
             <div id="flash" class="col-md-12">
               <?php foreach ( $this->getFlashMessages() as $flash ): ?>
-              <div class="<?php echo $flash['type'] ?>">
+              <?php $is_dismissable = !in_array($flash['type'], array("error", "success")); ?>
+              <div class="message <?php echo $flash['type'] ?> <?php if($is_dismissable) echo "dismissable" ?>">
+                <?php if($is_dismissable) : ?> <a class="pull-right dismiss">&times;</a> <?php endif; ?>
                 <?php echo $flash['message'] ?>
               </div>
               <?php endforeach; ?>

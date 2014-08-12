@@ -17,7 +17,7 @@
     <div class="body">
       <form name="login" method="post" action="<?php echo $form_path; ?>">
         <input type="password" class="form-field" name="password" value="" placeholder="Enter Password..." <?php echo $disabled ? "disabled" : "" ?>/>
-        <button class="btn-primary" type="submit" name="submit"  <?php echo $disabled ? "disabled" : "" ?>/>Login</button>
+        <button class="btn-primary" type="submit" name="submit"  <?php echo $disabled ? "disabled" : "" ?>>Login</button>
       </form>
     </div>
   </div>

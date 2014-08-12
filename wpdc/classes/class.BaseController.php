@@ -126,11 +126,15 @@ class BaseController {
             $this->addFlash( "warning", "Login will remain DISABLED until the <code>WPDC_PASSWORD</code> constant is $action in the <code>wpdc/config.php</code> file." );
         }
 
-
         if ( $this->isRequestProtected() && !$this->isAuthenticated() ) {
             $this->addFlash( "error", "Your session has expired, please login again." );
             $this->redirectToAction( "login" );
         }
+
+        if ( $this->isAuthenticated() ) {
+            $this->renewAuthCookie();
+        }
+
     }
 
 
@@ -151,7 +155,7 @@ class BaseController {
     }
 
     public function isRequestProtected() {
-        return $this->getRequest()->route["auth"];
+        return $this->getRequestRoute()["auth"];
     }
 
 
@@ -159,7 +163,25 @@ class BaseController {
         $layout = new View( realpath( dirname( __FILE__ ) . "/../views/_layout.php" ) );
         $view   = new View( realpath( dirname( __FILE__ ) . "/../views/" . $view_name . ".php" ) );
 
-        $this->data["request"] = $this->getRequest();
+        $this->data["current_user"] = (object) array(
+            "authenticated" => $this->isAuthenticated(),
+            "session"       => $this->getSession()
+        );
+
+        $this->data["request"] = (object) array(
+            "url"              => $this->getRequestUrl(),
+            "verb"             => $this->getRequestVerb(),
+            "path"             => $this->getRequestPath(),
+            "protected"        => $this->isRequestProtected(),
+            "route"            => $this->getRequestRoute(),
+            "assets_url"       => $this->getAssetsUrl(),
+            "root_route_url"   => $this->getRootRouteUrl(),
+            "base_url"         => $this->getBaseUrl(),
+            "base_route_url"   => $this->getBaseRouteUrl(),
+            "post"             => $this->getPost()
+        );
+
+
         $this->data["flash"]   = $this->getFlash();
 
         $this->data["body"]    = $view->render( $this->data );
@@ -209,7 +231,7 @@ class BaseController {
     }
 
 
-    public function destroySession() {
+    public function unsetSessionCookie() {
         $this->unsetCookie( "session" );
     }
 
@@ -217,7 +239,7 @@ class BaseController {
         $session = $this->_session;
         $session["_flash"] = $this->_flash;
 
-        $this->setCookieData( "session", $session, time() + ( 5*60 ) );
+        $this->setCookieData( "session", $session, time() + ( 5 * 60 ) );
 
     }
 
@@ -228,9 +250,18 @@ class BaseController {
         }
     }
 
+    public function getSession()
+    {
+        $this->_session;
+    }
+
 
     public function unsetAuthCookie() {
         $this->unsetCookie( "auth" );
+    }
+
+    public function renewAuthCookie() {
+        $this->setAuthCookie();
     }
 
     public function setAuthCookie() {
@@ -247,8 +278,9 @@ class BaseController {
 
     // Cookie Helpers
 
-    public function setCookieData( $key, $data, $ttl = null ) {
-        setcookie( "wpdc_" . $key, serialize( $data ), ( time() + $ttl ), '/' );
+    public function setCookieData( $key, $data, $expires_at = null ) {
+        $expires_at = $expires_at ? $expires_at : ( time() + ( 60*5 ) );
+        setcookie( "wpdc_" . $key, serialize( $data ), $expires_at, '/' );
     }
 
     public function getCookieData( $key ) {
@@ -271,21 +303,6 @@ class BaseController {
         }
         return $just_value_for_key ? $data[$just_value_for_key] : $data;
     }
-
-    public function getRequest() {
-        return (object) array(
-            "url"            => $this->getRequestUrl(),
-            "verb"           => $this->getRequestVerb(),
-            "path"           => $this->getRequestPath(),
-            "route"          => $this->getRequestRoute(),
-            "assets_url"     => $this->getAssetsUrl(),
-            "root_route_url" => $this->getRootRouteUrl(),
-            "base_url"       => $this->getBaseUrl(),
-            "base_route_url" => $this->getBaseRouteUrl(),
-            "post"           => $this->getPost()
-        );
-    }
-
 
     public function getRouteUrl( $route ) {
         return $this->getBaseRouteUrl() . '/'. $route["path"];
@@ -395,6 +412,6 @@ class BaseController {
         if ( $type & E_RECOVERABLE_ERROR )  $return .= '& E_RECOVERABLE_ERROR ';  // 4096 //
         if ( $type & E_DEPRECATED )         $return .= '& E_DEPRECATED ';         // 8192 //
         if ( $type & E_USER_DEPRECATED )    $return .= '& E_USER_DEPRECATED ';    // 16384 //
-        return trim(substr( $return, 2 ));
+        return trim( substr( $return, 2 ) );
     }
 }
