@@ -8,6 +8,9 @@ class WordPressDatabase {
     protected $port         = null;
     protected $table_prefix = null;
 
+    protected $last_connection_error = false;
+    protected $connection = null;
+
     public function __construct( $connection_info_array ) {
         extract($connection_info_array);
         $this->setHost( $host );
@@ -16,6 +19,39 @@ class WordPressDatabase {
         $this->setDatabase( $database );
         $this->setTablePrefix(isset($table_prefix) ? $table_prefix : "wp_" );
         if(isset($port)) $this->setPort($port);
+    }
+
+    public function isConnected() {
+        return $this->last_connection_error ? false : true;
+    }
+
+    public function getLastConnectionError()
+    {
+        return "Failed to connect to MySQL: " . $this->last_connection_error;
+    }
+
+    public function mysqli()
+    {
+        $mysqli = null;
+        if(function_exists("mysqli_report")) mysqli_report(MYSQLI_REPORT_STRICT);
+        try {
+            $mysqli = @new mysqli(
+                $this->getHost(),
+                $this->getUser(),
+                $this->getPassword(),
+                $this->getDatabase(),
+                $this->getPort()
+            );
+            if(mysqli_connect_error()) throw Exception(mysqli_connect_errno() . " - " . mysqli_connect_error());
+        } catch (Exception $e) {
+            $this->last_connection_error = $e->getMessage();
+        }
+        return $mysqli;
+    }
+
+    public function getConnection() {
+        $mysqli = $this->mysqli();
+        return !$this->getLastConnectionError() ? $mysqli : false;
     }
 
     // Getter
@@ -67,28 +103,7 @@ class WordPressDatabase {
         $this->table_prefix = $value;
     }
 
-    public function isConnected() {
-        return $this->getConnection()->connect_errno ? false : true;
-    }
 
-    public function getConnectionError()
-    {
-        $c = $this->getConnection();
-        return "Failed to connect to MySQL: (" . $c->connect_errno . ") " . $c->connect_error;
-    }
-
-    public function getConnection() {
-        if ( !isset( $this->_connection ) ) {
-            $this->_connection = new mysqli(
-                $this->getHost(),
-                $this->getUser(),
-                $this->getPassword(),
-                $this->getDatabase(),
-                $this->getPort()
-            );
-        }
-        return $this->_connection;
-    }
 
     public function query( $query ) {
         $results = array();

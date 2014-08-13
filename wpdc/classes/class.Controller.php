@@ -82,6 +82,8 @@ class Controller extends BaseController {
             "table_prefix" => $post["table_prefix"]
         ));
 
+        $db->getConnection();
+
         if(!$db->isConnected()) {
             $this->addFlash("error", "Database Error: Unable to connect using the settings provided.");
             $this->redirectToAction("database");
