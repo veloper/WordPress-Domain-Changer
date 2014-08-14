@@ -19,78 +19,69 @@
 
 
 
-window.WPDC = {
-  Helpers: {
+window.App = {
+  Modules: {},
+
+  init: function() {
+    this.loadModules();
+  },
+
+  loadModules: function() {
+    for(var key in this.Modules) {
+      module = this.Modules[key];
+      if(typeof(module["init"]) == "function") {
+        this.Modules[key].parent = this;
+        this.Modules[key].init();
+      }
+      this[key] = module;
+    }
+  }
+
+};
+
+App.Modules.Session = {
+  init: function() {}
+};
+
+App.Modules.Helpers = {
     isVisible : function(el) {
       return $(el).css("opacity") > 0;
     }
-  },
+};
 
-  initialize: function() {
-    this.registerEvents();
-  },
-
-
-  flashEl: function() { return $("#flash"); },
-  showFlash: function() {
-    this.flashEl().height(false).css("margin", false);
-  },
-  hideFlash: function() {
-    $("#flash").height($("#flash").height() + 25 + "px").css("margin", 0).animate({"height":0}, "fast");
-  },
-  autoHideFlash: function() {
-    self = this;
-    if($(".message", this.flashEl()).filter(function() { return self.Helpers.isVisible(this); }).size() > 0) return;
-    this.hideFlash();
-  },
-  hideFlashMessage: function(el) {
-    self = this;
-    $(el).animate({opacity: 0}, "slow", function(){
-      height = $(el).height();
-      $(el).css({margin: 0, padding: 0, borderWidth: 0}).height(height).animate({height: 0}, "fast", function(){
-        self.autoHideFlash();
-      });
-    });
-    // $(el).slideUp(100, function(){  });
-  },
-  monitorFlashMessages: function() {
-    self = this;
-    callback = function(){
-      $(".success, .error", "#flash").each(function() {
-        self.hideFlashMessage(this);
-      });
-    };
-    setTimeout(callback, 3500);
-  },
-
-
-  focusFirstInput: function() {
-    $("input").first().focus();
-  },
-
-
-
-  registerEvents: function() {
-    self = this;
-
-    this.focusFirstInput();
+App.Modules.Flash = {
+  init: function() {
     this.monitorFlashMessages();
-
-    $(document).on("click", ".dismiss", function(e) {
-      self.hideFlashMessage($(e.target).closest(".message"));
-    });
   },
-
-
+  flashEl:              function() { return $("#flash"); },
+  messageEls:           function() { return $(".message", this.flashEl()); },
+  visibleMessageEls:    function() { return this.messageEls().filter(function() { return self.Helpers.isVisible(this); }); },
+  show:                 function() { this.flashEl().height(false).css("margin", false); },
+  hide:                 function() { this.flashEl().height($("#flash").height() + 25 + "px").css("margin", 0).animate({"height":0}, "fast"); },
+  monitorFlashMessages: function() {
+    setTimeout(function(){ $(".success, .error", "#flash").each(function(){this.hideMessage(this);}); }, 3500);
+  },
+  hideMessage: function(el) {
+    var message = $(el);
+    var self    = this;
+    message.animate({opacity: 0}, "slow", function(){
+      height = message.height();
+      message.css({margin: 0, padding: 0, borderWidth: 0}).height(height).animate({height: 0}, "fast", function(){
+        if(self.visibleMessageEls().length <= 0) self.hide();
+      });
+    });
+  }
 };
 
-window.onload = function() {
-  WPDC.initialize();
+App.Modules.UX = {
+  init: function() {
+    this.focusFirstInput();
+  },
+  focusFirstInput: function() { $("input").first().focus(); }
 };
 
-
-
-
+// Init App
+window.onload = function() { App.init(); };
 
 
 
