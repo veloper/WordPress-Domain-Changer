@@ -3,17 +3,30 @@ require_once "class.BaseController.php";
 require_once "class.WordPressDatabase.php";
 class Controller extends BaseController {
 
+    private $db_settings = array(
+        "host"         => "localhost",
+        "port"         => 3306,
+        "user"         => null,
+        "password"     => null,
+        "database"     => null,
+        "table_prefix" => null
+    );
+
     public function routes() {
         $this->addRoute( "GET" , "login"          , "login"         , array( "root" => true ));
         $this->addRoute( "POST", "login/submit"   , "loginSubmit");
         $this->addRoute( "GET" , "logout"         , "logout");
         $this->addRoute( "GET" , "database"       , "database"      , array( "auth" => true ) );
         $this->addRoute( "POST", "database/submit", "databaseSubmit", array( "auth" => true ) );
-        $this->addRoute( "GET" , "changer"        , "changer"       , array( "auth" => true ) );
-        $this->addRoute( "POST", "changer/submit" , "changerSubmit" , array( "auth" => true ) );
-        $this->addRoute( "GET" , "changer/success", "changerSuccess", array( "auth" => true ) );
+        $this->addRoute( "GET" , "change"        , "change"       , array( "auth" => true ) );
+        $this->addRoute( "POST", "change/submit" , "changerSubmit" , array( "auth" => true ) );
+        $this->addRoute( "GET" , "change/success", "changerSuccess", array( "auth" => true ) );
 
         // $this->addRoute( "POST", "database/check" , "databaseCheck" , array( "auth" => true ) );
+    }
+
+    public function getWpConfigFile() {
+        return $config = PhpFile::create('wp-config.php');
     }
 
     public function beforeRequest()
@@ -33,7 +46,7 @@ class Controller extends BaseController {
     public function loginSubmit() {
         if ( md5( $this->getPost( 'password' ) ) == md5( WPDC_PASSWORD ) ) {
             $this->setAuthCookie();
-            $this->addFlash( "success", "Login Successful!" );
+            $this->addFlash( "success", "You have logged-in successully!" );
             $this->redirectToAction( "database" );
         } else {
             $this->addFlash( "error", "Incorrect password, please try again." );
@@ -43,9 +56,8 @@ class Controller extends BaseController {
 
     public function logout()
     {
-        $this->unsetSessionCookie();
+        $this->addFlash("success", "You have logged-out successully!");
         $this->unsetAuthCookie();
-        $this->addFlash("success", "You've successully logged out.");
         $this->redirectToAction("login");
     }
 
@@ -59,6 +71,13 @@ class Controller extends BaseController {
             array("name" => "database"     , "label" => "Database Name" , "value" => $config->getConstant("DB_NAME")      , "req" => true),
             array("name" => "table_prefix" , "label" => "Table Prefix"  , "value" => $config->getVariable("table_prefix") , "req" => true)
         );
+
+        if($last_post = $this->getLastPostTo("databaseSubmit")) {
+            foreach($this->data["fields"] as $i => $field) {
+                $value = isset($last_post[$field["name"]]) ? $last_post[$field["name"]] : "";
+                $this->data["fields"][$i]["value"] = $value;
+            }
+        }
 
         $this->data["form_path"] = $this->getActionUrl( "databaseSubmit" );
 
@@ -74,20 +93,58 @@ class Controller extends BaseController {
     public function databaseSubmit()
     {
         $post = $this->getPost();
-        $db = new WordPressDatabase(array(
-            "host"         => $post["host"],
+
+        $host_and_port = explode(':', $post["host"]);
+        $host = array_shift($host_and_port);
+        $port = ($x = array_shift($host_and_port)) ? (int) $x : 3306;
+
+        $db_settings = array(
+            "host"         => $host,
+            "port"         => $port,
             "user"         => $post["user"],
             "password"     => $post["password"],
             "database"     => $post["database"],
             "table_prefix" => $post["table_prefix"]
-        ));
+        );
 
-        $db->getConnection();
+        $wpdb = new WordPressDatabase($db_settings);
 
-        if(!$db->isConnected()) {
+        if(!$wpdb->isConnected()) {
             $this->addFlash("error", "Database Error: Unable to connect using the settings provided.");
-            $this->redirectToAction("database");
+            // $this->addFlash("warning", $wpdb->getLastError()); # Uncomment mysqli errors
+            return $this->redirectToAction("database");
         }
+
+        if(empty($wpdb->getTables())) {
+            $this->addFlash("error", 'Database Error: Could not find any tables that start with the "' . $post["table_prefix"] . '" prefix.');
+            return $this->redirectToAction("database");
+        }
+
+        $this->session["db_settings"] = $db_settings;
+        $this->addFlash("success", "Database connection was successful!");
+
+        return $this->redirectToAction("change");
+    }
+
+    public function change()
+    {
+        $wpdb = new WordPressDatabase($this->session["db_settings"]);
+        $this->data["form_path"] = $this->getActionUrl( "loginSubmit" );
+        $this->data["tables"] = $wpdb->getTables();
+
+        $this->data["fields"] = array(
+            array("name" => "old_url" , "label" => "Old URL"  , "value" => "" , "req" => true),
+            array("name" => "new_url" , "label" => "New URL"      , "value" => "" , "req" => true),
+        );
+
+        if($last_post = $this->getLastPostTo("databaseSubmit")) {
+            foreach($this->data["fields"] as $i => $field) {
+                $value = isset($last_post[$field["name"]]) ? $last_post[$field["name"]] : "";
+                $this->data["fields"][$i]["value"] = $value;
+            }
+        }
+
+        return $this->render("change");
     }
 
 

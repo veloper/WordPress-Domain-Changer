@@ -12,12 +12,14 @@ class BaseController {
         500 => '500 Internal Server Error'
     );
 
+    public $session_ttl = 600; // 10 minutes
+
     public $data    = array(); // The data that will be passed to the view
+    public $session = array();
 
     public $_routes  = array();
     public $_route   = null; // The route that will be processed
 
-    public $_session = array();
     public $_flash   = array( "error" => array(), "success" => array(), "warning" => array(), "info" => array() );
 
     // Response
@@ -59,11 +61,11 @@ class BaseController {
 
     public function routes() { /* override me */ }
 
-    public function addRoute( $verb, $path, $method, $options = array() ) {
+    public function addRoute( $verb, $path, $action, $options = array() ) {
         $route = array(
             "verb"   => $verb,
             "path"   => $path,
-            "method" => $method,
+            "action" => $action,
             "auth"   => array_key_exists( "auth", $options ) ? (bool) $options["auth"] : false,
             "root"   => array_key_exists( "root", $options ) ? (bool) $options["root"] : false
         );
@@ -106,14 +108,14 @@ class BaseController {
         $this->beforeRequest();
 
         if ( !$this->isRedirecting() ) {
-            $this->_body = $this->callRouteMethod( $this->_route );
+            $this->_body = $this->callRouteAction( $this->_route );
         }
 
         $this->afterRequest();
     }
 
-    public function callRouteMethod( array $route ) {
-        return call_user_func( array( $this, $route["method"] ) );
+    public function callRouteAction( array $route ) {
+        return call_user_func( array( $this, $route["action"] ) );
     }
 
     public function beforeRequest() {
@@ -122,8 +124,8 @@ class BaseController {
         $this->loadSession();
 
         if ( !$this->isPasswordValid() ) {
-            $action = $this->isPasswordConstantDefined() ? "changed" : "defined";
-            $this->addFlash( "warning", "Login will remain DISABLED until the <code>WPDC_PASSWORD</code> constant is $action in the <code>wpdc/config.php</code> file." );
+            $verb_past_tense = $this->isPasswordConstantDefined() ? "changed" : "defined";
+            $this->addFlash( "warning", "Login will remain DISABLED until the <code>WPDC_PASSWORD</code> constant is $verb_past_tense in the <code>wpdc/config.php</code> file." );
         }
 
         if ( $this->isRequestProtected() && !$this->isAuthenticated() ) {
@@ -140,6 +142,7 @@ class BaseController {
 
     public function afterRequest() {
         if ( !$this->isRedirecting() )  $this->clearFlash();
+        if ( $this->getRequestVerb() == "POST") $this->setLastPostTo($this->getRequestAction(), $this->getPost());
         $this->saveSession();
         $this->stopUsingCustomErrorHandler();
     }
@@ -173,6 +176,7 @@ class BaseController {
             "verb"             => $this->getRequestVerb(),
             "path"             => $this->getRequestPath(),
             "protected"        => $this->isRequestProtected(),
+            "authenticated"    => $this->isAuthenticated(),
             "route"            => $this->getRequestRoute(),
             "assets_url"       => $this->getAssetsUrl(),
             "root_route_url"   => $this->getRootRouteUrl(),
@@ -195,16 +199,17 @@ class BaseController {
 
 
 
-    public function redirectToAction( $method ) {
-        $route = $this->getRouteWhere( array( "method" => $method ) );
+    public function redirectToAction( $action ) {
+        $route = $this->getRouteWhere( array( "action" => $action ) );
         if ( $route ) {
             $this->setRedirectUrl( $this->getRouteUrl( $route ) );
         }
     }
 
     public function isAuthenticated() {
+        // die("<pre>".print_r($this->getAuthCookie(), true));
         if ( $cookie = $this->getAuthCookie() ) {
-            $not_expired = ( isset( $cookie["expires_at"] ) && time() < $cookie["expires_at"] ) ? true : false;
+            $not_expired = ( isset( $cookie["expiration"] ) && time() < $cookie["expiration"] ) ? true : false;
             $valid_token = ( isset( $cookie["token"] ) && $cookie["token"] == md5( WPDC_PASSWORD ) ) ? true : false;
             if ( $not_expired && $valid_token ) return true;
         }
@@ -236,23 +241,22 @@ class BaseController {
     }
 
     public function saveSession() {
-        $session = $this->_session;
+        $session = $this->session;
         $session["_flash"] = $this->_flash;
 
-        $this->setCookieData( "session", $session, time() + ( 5 * 60 ) );
+        $this->setCookieData( "session", $session, $this->session_ttl );
 
     }
 
     public function loadSession() {
-        $this->_session = $this->getCookieData( "session" );
-        if ( array_key_exists( "_flash", $this->_session ) ) {
-            $this->_flash = $this->_session["_flash"];
+        $this->session = $this->getCookieData( "session" );
+        if ( array_key_exists( "_flash", $this->session ) ) {
+            $this->_flash = $this->session["_flash"];
         }
     }
 
-    public function getSession()
-    {
-        $this->_session;
+    public function getSession() {
+        $this->session;
     }
 
 
@@ -266,25 +270,39 @@ class BaseController {
 
     public function setAuthCookie() {
         $data               = array();
-        $data["expires_at"] = time() + ( 5*60 ); // 5 minutes
         $data["token"]      = md5( WPDC_PASSWORD );
 
-        $this->setCookieData( "auth", $data, $data["expires_at"] );
+        $this->setCookieData( "auth", $data, $this->session_ttl );
     }
 
     public function getAuthCookie() {
         return $this->getCookieData( "auth" );
     }
 
+    public function getLastPostTo($action)
+    {
+        return $this->cookieExists( "last_post_to_" . $action ) ? $this->getCookieData( "last_post_to_" . $action ) : false;
+    }
+
+    public function setLastPostTo($action, $post)
+    {
+        $post   = $post   ? $post   : $this->getPost();
+        $action = $action ? $action : $this->getRequestAction();
+        $this->setCookieData("last_post_to_" . $action, $post, 5 );
+    }
+
     // Cookie Helpers
 
-    public function setCookieData( $key, $data, $expires_at = null ) {
-        $expires_at = $expires_at ? $expires_at : ( time() + ( 60*5 ) );
-        setcookie( "wpdc_" . $key, serialize( $data ), $expires_at, '/' );
+    public function setCookieData( $key, $data, $ttl = null ) {
+        $ttl                = $ttl ? $ttl : ( 60 * 5 );
+        $expiration         = time() + $ttl;
+        $data["ttl"]        = $ttl;
+        $data["expiration"] = $expiration;
+        setcookie( "wpdc_" . $key, json_encode( $data ), $expiration, '/' );
     }
 
     public function getCookieData( $key ) {
-        return $this->cookieExists( $key ) ? unserialize( $_COOKIE["wpdc_" . $key] ) : array();
+        return $this->cookieExists( $key ) ? json_decode( $_COOKIE["wpdc_" . $key], true ) : array();
     }
 
     public function cookieExists( $key ) {
@@ -292,7 +310,7 @@ class BaseController {
     }
 
     public function unsetCookie( $key ) {
-        setcookie( "wpdc_" . $key, "", time() - 3600 );
+        setcookie( "wpdc_" . $key, "", time() - 3600, '/');
     }
 
     public function getPost( $just_value_for_key = null ) {
@@ -308,8 +326,8 @@ class BaseController {
         return $this->getBaseRouteUrl() . '/'. $route["path"];
     }
 
-    public function getActionUrl( $method ) {
-        if ( $route = $this->getRouteWhere( array( "method" => $method ) ) ) {
+    public function getActionUrl( $action ) {
+        if ( $route = $this->getRouteWhere( array( "action" => $action ) ) ) {
             return $this->getBaseRouteUrl() . '/'. $route["path"];
         }
         return false;
@@ -348,6 +366,11 @@ class BaseController {
 
     public function getRequestRoute() {
         return $this->getRouteWhere( array( "path" => $this->getRequestPath() ) );
+    }
+
+    public function getRequestAction()
+    {
+        return $this->getRequestRoute()["action"];
     }
 
     public function getRequestPath() {

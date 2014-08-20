@@ -3,7 +3,6 @@
   <div class="panel">
     <div class="heading">
       <h2 class="title engrave">WordPress Config File</h2>
-      <a href="javascript:void(0)" class="pull-right btn-primary btn-small">Paste To &rarr;</a>
     </div>
     <div class="body">
       <h3>File Path</h3>

@@ -8,8 +8,8 @@ class WordPressDatabase {
     protected $port         = null;
     protected $table_prefix = null;
 
-    protected $last_connection_error = false;
-    protected $connection = null;
+    protected $db = null;
+    protected $last_error = null;
 
     public function __construct( $connection_info_array ) {
         extract($connection_info_array);
@@ -19,23 +19,31 @@ class WordPressDatabase {
         $this->setDatabase( $database );
         $this->setTablePrefix(isset($table_prefix) ? $table_prefix : "wp_" );
         if(isset($port)) $this->setPort($port);
+        $this->connect();
+    }
+
+    public function connect()
+    {
+        $this->db();
     }
 
     public function isConnected() {
-        return $this->last_connection_error ? false : true;
+        return $this->getLastError() ? false : true;
     }
 
-    public function getLastConnectionError()
+    public function getLastError()
     {
-        return "Failed to connect to MySQL: " . $this->last_connection_error;
+        if($this->last_error) {
+            return "Failed to connect to MySQL: " . $this->last_error;
+        }
+        return null;
     }
 
-    public function mysqli()
+    public function db()
     {
-        $mysqli = null;
         if(function_exists("mysqli_report")) mysqli_report(MYSQLI_REPORT_STRICT);
         try {
-            $mysqli = @new mysqli(
+            $this->db = new mysqli(
                 $this->getHost(),
                 $this->getUser(),
                 $this->getPassword(),
@@ -44,14 +52,15 @@ class WordPressDatabase {
             );
             if(mysqli_connect_error()) throw Exception(mysqli_connect_errno() . " - " . mysqli_connect_error());
         } catch (Exception $e) {
-            $this->last_connection_error = $e->getMessage();
+            $this->last_error = $e->getMessage();
+            $this->db = null;
         }
-        return $mysqli;
+        return $this->db;
     }
 
     public function getConnection() {
-        $mysqli = $this->mysqli();
-        return !$this->getLastConnectionError() ? $mysqli : false;
+        $db = $this->db();
+        return !$this->getLastError() ? $db : false;
     }
 
     // Getter
@@ -103,20 +112,95 @@ class WordPressDatabase {
         $this->table_prefix = $value;
     }
 
+    public function getShowTablesStatus()
+    {
+        $mapping = array(
+            "Name"            => "name",
+            "Engine"          => "engine",
+            "Version"         => "version",
+            "Row_format"      => "row_format",
+            "Rows"            => "rows",
+            "Avg_row_length"  => "avg_row_length",
+            "Data_length"     => "data_length",
+            "Max_data_length" => "max_data_length",
+            "Index_length"    => "index_length",
+            "Data_free"       => "data_free",
+            "Auto_increment"  => "auto_increment",
+            "Create_time"     => "create_time",
+            "Update_time"     => "update_time",
+            "Check_time"      => "check_time",
+            "Collation"       => "collation",
+            "Checksum"        => "checksum",
+            "Create_options"  => "create_options",
+            "Comment"         => "comment",
+        );
+
+        // Tables
+        $tables = array();
+        foreach($this->query("SHOW TABLE STATUS") as $row) {
+            $table = array();
+            foreach ($mapping as $original => $new) {
+                $table[$new] = $row[$original];
+            }
+            $tables[$table["name"]] = $table;
+        }
+
+        return $tables;
+    }
+
+    public function getDescribeTable($table_name)
+    {
+        $mapping = array(
+            "Field"           => "field",
+            "Type"            => "type",
+            "Null"            => "null",
+            "Key"             => "key",
+            "Default"         => "default",
+            "Extra"           => "extra"
+        );
+        $fields = array();
+        foreach($this->query("DESCRIBE `%s`", array($table_name)) as $row) {
+            $field = array();
+            foreach ($mapping as $original => $new) $field[$new] = $row[$original];
+            $field["is_stringish"] = (bool) preg_match("/(varchar|char|text)/", $field["type"]);
+
+            $fields[$field["field"]] = $field;
+        }
+        return $fields;
+    }
+
+    public function getAllTables() {
+        $tables = $this->getShowTablesStatus();
+        foreach ($tables as $name => $details) $tables[$name]["description"] = $this->getDescribeTable($name);
+        return $tables;
+    }
 
 
-    public function query( $query ) {
+    public function getTables() {
+        $tables = array();
+        foreach($this->getAllTables() as $name => $details) {
+            if(stripos($name, $this->getTablePrefix()) === 0) $tables[$name] = $details;
+        }
+        return $tables;
+    }
+
+    public function query( $query, $tokens = array() ) {
+        if(is_array($tokens) && count($tokens) > 0) {
+            $args = array_map(array($this, "escape"), $tokens);
+            array_unshift($args, $query);
+            $query = call_user_func_array('sprintf', $args);
+        }
         $results = array();
         if ( $this->isConnected() ) {
             $result = $this->getConnection()->query( $query );
             if ( is_object( $result ) && ( $result->num_rows > 0 ) ) {
-                while ( $row = $result->fetch_assoc() ) array_push( $row );
+                while ( $row = $result->fetch_array(MYSQLI_BOTH) ) $results[] = $row;
             }
         }
-        return ( count( $results ) > 0 ) ? $results : false;
+        return $results;
     }
 
-    public function getTableName( $table ) {
+    public function getPrefixedTableName( $table ) {
         return $this->table_prefix . $table;
     }
 
@@ -125,7 +209,7 @@ class WordPressDatabase {
     }
 
     public function option( $name ) {
-        $query = 'SELECT * FROM ' . $this->getTableName( "options" ) . ' WHERE option_name="' . $this->escape( $name ) . '";';
+        $query = 'SELECT * FROM ' . $this->getPrefixedTableName( "options" ) . ' WHERE option_name="' . $this->escape( $name ) . '";';
         if ( $results = $this->getQueryResults( $query ) ) {
             return $results[0]['option_value'];
         }

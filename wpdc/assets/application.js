@@ -1,24 +1,3 @@
-// if(document.getElementById('seconds')) {
-//   window.setInterval(function() {
-//     var seconds_elem = document.getElementById('seconds');
-//     var bar_elem     = document.getElementById('bar');
-//     var seconds      = parseInt(seconds_elem.innerHTML);
-//     var percentage   = Math.round(seconds / (5 * 1000));
-//     var bar_color    = '#00FF19';
-//     if(percentage < 25) {
-//         bar_color = 'red';
-//     } else if (percentage < 75) {
-//         bar_color = 'yellow';
-//     }
-//     if(seconds <= 0) window.location.reload();
-//     bar_elem.style.width = percentage + '%';
-//     bar_elem.style.backgroundColor = bar_color;
-//     seconds_elem.innerHTML = --seconds;
-//   }, 1000);
-// }
-
-
-
 window.App = {
   Modules: {},
 
@@ -30,41 +9,129 @@ window.App = {
     for(var key in this.Modules) {
       module = this.Modules[key];
       if(typeof(module["init"]) == "function") {
-        this.Modules[key].parent = this;
-        this.Modules[key].init();
+        module.app = this;
+        module.init();
       }
-      this[key] = module;
+      this[key.toLowerCase()] = module;
     }
   }
 
 };
 
-App.Modules.Session = {
-  init: function() {}
+App.Modules.Events = {
+  init: function() {
+    this._events = {};
+  },
+  on: function(event, callback) {
+    this._events[event] = this._events[event] ? this._events[event] : [];
+    this._events[event].push(callback);
+  },
+  fire: function(event, args, scope) {
+    events = (this._events[event] || []);
+    args   = (args || []);
+    scope  = (scope || this);
+    for(var i in events) events[i].apply(scope, args);
+  }
 };
 
 App.Modules.Helpers = {
-    isVisible : function(el) {
-      return $(el).css("opacity") > 0;
+  leadingZero: function(value) {
+    return (value < 10) ? "0" + value : value;
+  }
+};
+
+App.Modules.Cookies = {
+  init: function() {
+    this.cookies = null;
+  },
+  get: function (name,c,C,i){
+    if(this.cookies){ return this.cookies[name]; }
+    c = document.cookie.split('; ');
+    this.cookies = {};
+    for(i=c.length-1; i>=0; i--){
+       C = c[i].split('=');
+       this.cookies[C[0]] = C[1];
     }
+    return this.cookies[name];
+  }
+};
+
+App.Modules.Session = {
+  init: function () {
+    this._data = {};
+    this.load();
+    this.startCountdown();
+    this.app.events.on("sessionExpire", function(){
+      window.location.reload();
+    });
+  },
+  load: function() {
+    this._data = JSON.parse(decodeURIComponent(this.app.cookies.get("wpdc_session")));
+  },
+  data: function(key) {
+    return key ? this._data[key] : this._data;
+  },
+  expirationDate: function() {
+    return new Date(this.data("expiration") * 1000);
+  },
+  ttl: function() {
+    return this.data("ttl");
+  },
+  updateCountdown:function() {
+    var duration  = (this.expirationDate() - new Date()) / 1000;
+    var quotient  = (duration / this.ttl() * 100);
+    var minutes   = Math.floor(duration / 60);
+    var seconds   = Math.round(duration % 60);
+    var sessionEl = $('#header .session');
+
+    $(".minutes", sessionEl).html(this.app.helpers.leadingZero(minutes));
+    $(".seconds", sessionEl).html(this.app.helpers.leadingZero(seconds));
+    $("div",sessionEl).removeClass().addClass(quotient > 50 ? "green" : (quotient > 25 ? "orange" : "red")).width(Math.ceil(quotient) + "%");
+
+    if(duration < 0) {
+      this.app.events.fire("sessionExpire");
+    }
+  },
+  startCountdown:function() {
+    if(this.app.cookies.get("wpdc_auth")) {
+      self = this;
+      setInterval(function(){ self.updateCountdown(); }, 900);
+    }
+  }
+
 };
 
 App.Modules.Flash = {
   init: function() {
-    this.monitorFlashMessages();
+    this._setInitialOpacities();
+    this._startMonitorFlashMessages();
+    this._registerEvents();
+  },
+  _registerEvents: function() {
+    var self = this;
+    this.flashEl().on("click", '.dismiss', function(){
+      self.hideMessage($(this).hide().parents(".message"));
+    });
+  },
+  _setInitialOpacities: function() { this.messageEls().each(function() { $(this).css("opacity", 1); }); },
+  _startMonitorFlashMessages: function() {
+    var self = this;
+    var callback = function() {
+      messages = $(".success", self.flashEl());
+      if(messages.size() > 0) self.hideMessage(messages);
+    };
+    setTimeout(callback, 3500);
   },
   flashEl:              function() { return $("#flash"); },
   messageEls:           function() { return $(".message", this.flashEl()); },
-  visibleMessageEls:    function() { return this.messageEls().filter(function() { return self.Helpers.isVisible(this); }); },
+  visibleMessageEls:    function() { return this.messageEls().filter(function(){ return $(this).css("opacity") > 0; }); },
   show:                 function() { this.flashEl().height(false).css("margin", false); },
   hide:                 function() { this.flashEl().height($("#flash").height() + 25 + "px").css("margin", 0).animate({"height":0}, "fast"); },
-  monitorFlashMessages: function() {
-    setTimeout(function(){ $(".success, .error", "#flash").each(function(){this.hideMessage(this);}); }, 3500);
-  },
-  hideMessage: function(el) {
-    var message = $(el);
-    var self    = this;
-    message.animate({opacity: 0}, "slow", function(){
+  hideMessage: function(els) {
+    var messages = $(els);
+    var self     = this;
+    messages.animate({opacity: 0}, "slow", function(){
+      var message = $(this);
       height = message.height();
       message.css({margin: 0, padding: 0, borderWidth: 0}).height(height).animate({height: 0}, "fast", function(){
         if(self.visibleMessageEls().length <= 0) self.hide();
@@ -84,7 +151,15 @@ App.Modules.UX = {
 window.onload = function() { App.init(); };
 
 
-
+// JSON.js
+if(typeof JSON!=="object")JSON={};
+(function(){function f(n){return n<10?"0"+n:n}if(typeof Date.prototype.toJSON!=="function"){Date.prototype.toJSON=function(){return isFinite(this.valueOf())?this.getUTCFullYear()+"-"+f(this.getUTCMonth()+1)+"-"+f(this.getUTCDate())+"T"+f(this.getUTCHours())+":"+f(this.getUTCMinutes())+":"+f(this.getUTCSeconds())+"Z":null};String.prototype.toJSON=Number.prototype.toJSON=Boolean.prototype.toJSON=function(){return this.valueOf()}}var cx,escapable,gap,indent,meta,rep;function quote(string){escapable.lastIndex=
+0;return escapable.test(string)?'"'+string.replace(escapable,function(a){var c=meta[a];return typeof c==="string"?c:"\\u"+("0000"+a.charCodeAt(0).toString(16)).slice(-4)})+'"':'"'+string+'"'}function str(key,holder){var i,k,v,length,mind=gap,partial,value=holder[key];if(value&&typeof value==="object"&&typeof value.toJSON==="function")value=value.toJSON(key);if(typeof rep==="function")value=rep.call(holder,key,value);switch(typeof value){case "string":return quote(value);case "number":return isFinite(value)?
+String(value):"null";case "boolean":case "null":return String(value);case "object":if(!value)return"null";gap+=indent;partial=[];if(Object.prototype.toString.apply(value)==="[object Array]"){length=value.length;for(i=0;i<length;i+=1)partial[i]=str(i,value)||"null";v=partial.length===0?"[]":gap?"[\n"+gap+partial.join(",\n"+gap)+"\n"+mind+"]":"["+partial.join(",")+"]";gap=mind;return v}if(rep&&typeof rep==="object"){length=rep.length;for(i=0;i<length;i+=1)if(typeof rep[i]==="string"){k=rep[i];v=str(k,
+value);if(v)partial.push(quote(k)+(gap?": ":":")+v)}}else for(k in value)if(Object.prototype.hasOwnProperty.call(value,k)){v=str(k,value);if(v)partial.push(quote(k)+(gap?": ":":")+v)}v=partial.length===0?"{}":gap?"{\n"+gap+partial.join(",\n"+gap)+"\n"+mind+"}":"{"+partial.join(",")+"}";gap=mind;return v}}if(typeof JSON.stringify!=="function"){escapable=/[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g;meta={"\b":"\\b","\t":"\\t",
+"\n":"\\n","\f":"\\f","\r":"\\r",'"':'\\"',"\\":"\\\\"};JSON.stringify=function(value,replacer,space){var i;gap="";indent="";if(typeof space==="number")for(i=0;i<space;i+=1)indent+=" ";else if(typeof space==="string")indent=space;rep=replacer;if(replacer&&typeof replacer!=="function"&&(typeof replacer!=="object"||typeof replacer.length!=="number"))throw new Error("JSON.stringify");return str("",{"":value})}}if(typeof JSON.parse!=="function"){cx=/[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g;
+JSON.parse=function(text,reviver){var j;function walk(holder,key){var k,v,value=holder[key];if(value&&typeof value==="object")for(k in value)if(Object.prototype.hasOwnProperty.call(value,k)){v=walk(value,k);if(v!==undefined)value[k]=v;else delete value[k]}return reviver.call(holder,key,value)}text=String(text);cx.lastIndex=0;if(cx.test(text))text=text.replace(cx,function(a){return"\\u"+("0000"+a.charCodeAt(0).toString(16)).slice(-4)});if(/^[\],:{}\s]*$/.test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,
+"@").replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,"]").replace(/(?:^|:|,)(?:\s*\[)+/g,""))){j=eval("("+text+")");return typeof reviver==="function"?walk({"":j},""):j}throw new SyntaxError("JSON.parse");}}})();
 
 // Core
 /* Zepto v1.1.4 - zepto event ajax form ie - zeptojs.com/license */

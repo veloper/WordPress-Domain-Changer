@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>WordPress Domain Changer by Daniel Doezema </title>
+    <title>WordPress Domain Changer by Daniel Doezema</title>
     <link rel="stylesheet" type="text/css" href="<?php echo $request->assets_url; ?>/application.css"></link>
   </head>
   <body>
@@ -15,11 +15,24 @@
             </div>
           </div>
           <div class="col-md-4">
-            <div class="header-block">
-              <?php if($request->authenticated) : ?>
-                <a class="btn-primary pull-right" href="<?php echo $logout_path; ?>">Logout</a>
-              <?php endif; ?>
-            </div>
+            <?php if($request->authenticated) : ?>
+              <div class="row">
+                <div class="col-md-8">
+                  <div class="header-block">
+                    <div class="session">
+                      <span class="title">Session Status</span>
+                      <span class="timer"><span class="minutes"></span>:<span class="seconds"></span> Remaining</span>
+                      <div class="green"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="header-block">
+                    <a class="btn-primary pull-right" href="<?php echo $logout_path; ?>">Logout</a>
+                  </div>
+                </div>
+              </div>
+            <?php endif; ?>
           </div>
         </div>
       </div>
@@ -33,7 +46,7 @@
           <div class="row">
             <div id="flash" class="col-md-12">
               <?php foreach ( $this->getFlashMessages() as $flash ): ?>
-              <?php $is_dismissable = !in_array($flash['type'], array("error", "success")); ?>
+              <?php $is_dismissable = !in_array($flash['type'], array("success")); ?>
               <div class="message <?php echo $flash['type'] ?> <?php if($is_dismissable) echo "dismissable" ?>">
                 <?php if($is_dismissable) : ?> <a class="pull-right dismiss">&times;</a> <?php endif; ?>
                 <?php echo $flash['message'] ?>
