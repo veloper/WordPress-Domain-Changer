@@ -157,10 +157,7 @@ class Controller extends BaseController {
     public function getAvailableTables($value='')
     {
         $tables = array();
-        foreach($this->db()->getTables() as $table) if($table["rows"] > 0) {
-            if($table["rows"] <= 0 || empty($table["stringish_fields"]) ) continue;
-            $tables[] = $table;
-        }
+        foreach($this->db()->getTables() as $table) $tables[] = $table;
         return $tables;
     }
 

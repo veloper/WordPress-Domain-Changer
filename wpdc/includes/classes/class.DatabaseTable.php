@@ -12,15 +12,15 @@ class DatabaseTable {
     $this->name     = $name;
   }
 
-  public function getCount()
+  public function getRowCount()
   {
-    return $this->meta()->rows;
+    return $this->getMeta()->rows;
   }
 
   public function getPrimaryKeyColumns()
   {
     $columns = array();
-    foreach($this->columns() as $column) if($column->is_primary_key) $columns[] = $column;
+    foreach($this->getColumns() as $column) if($column->is_primary_key) $columns[] = $column;
     return $columns;
   }
 
@@ -48,9 +48,16 @@ class DatabaseTable {
       );
 
       $meta = array();
-      $record = current(reset($this->database->query("SHOW TABLE STATUS WHERE Name='?'", $this->name)));
-      foreach ($mapping as $record_key => $mapped_key) $meta[$mapped_key] = $record->{$record_key};
+      $row = $this->database->query("SHOW TABLE STATUS WHERE Name=?", array($this->name))[0];
+      foreach ($mapping as $record_key => $mapped_key) $meta[$mapped_key] = $row[$record_key];
       return (object) $meta;
+  }
+
+  public function getStringishColumns()
+  {
+    $columns = array();
+    foreach($this->getColumns() as $column) if($column->is_stringish) $columns[] = $column;
+    return $columns;
   }
 
   public function getColumns()
@@ -66,9 +73,9 @@ class DatabaseTable {
           "Extra"   => "extra"
         );
         $columns = array();
-        foreach($this->database->query("DESCRIBE `%s`", $this->name) as $record) {
+        foreach($this->database->query("DESCRIBE {$this->name}") as $row) {
           $column = array();
-          foreach ($mapping as $record_key => $mapped_key) $column[$mapped_key] = $record->{$record_key};
+          foreach ($mapping as $key => $value) $column[$value] = $row[$key];
           $column["is_stringish"]   = (bool) preg_match("/(varchar|char|text)/", $column["type"]);
           $column["is_primary_key"] = ($column["key"] == "PRI");
 

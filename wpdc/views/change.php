@@ -22,12 +22,12 @@
                 </tr>
               <?php foreach($tables as $table): ?>
                 <tr>
-                  <td class="checkbox"><input type="checkbox" name="table_<?php echo $table["name"] ?>" value="1" checked /></td>
-                  <td><code><?php echo str_replace($table_prefix, "", $table["name"]) ?></code></td>
-                  <td align="right"><?php echo $table["rows"] ?></td>
+                  <td class="checkbox"><input type="checkbox" name="table_<?php echo $table->name ?>" value="1" checked /></td>
+                  <td><code><?php echo str_replace($table_prefix, "", $table->name) ?></code></td>
+                  <td align="right"><?php echo $table->getRowCount() ?></td>
                   <td>
-                    <?php foreach($table["stringish_fields"] as $field): ?>
-                      <span class="label label-default"><code><?php echo $field ?></code></span>
+                    <?php foreach($table->getStringishColumns() as $column): ?>
+                      <span class="label label-default"><code><?php echo $column->name ?></code></span>
                     <?php endforeach ?>
                   </td>
                 </tr>

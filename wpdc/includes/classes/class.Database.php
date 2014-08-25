@@ -47,7 +47,6 @@ class Database {
 
   public function getPreparedSql( $query, $tokens = array() ) {
     if ( substr_count( $query, "?" ) != count( $tokens ) ) throw new Exception( "Database->getPreparedSql(): Token count missmatch." );
-    FAILING HERE
     foreach ( $tokens as $token ) $query = preg_replace( "/\?/", $this->getEscapedSqlFromValue( $token ), $query, 1 );
     return $query;
   }
@@ -60,7 +59,7 @@ class Database {
     } elseif ( $value === null || stripos( (string) $value, "null" ) !== false ) {
       $replacement = "NULL";
     } else {
-      $replacement = '"' . $this->escape_string( (string) $value ) . '"';
+      $replacement = '"' . $this->escape( (string) $value ) . '"';
     }
     return $replacement;
   }

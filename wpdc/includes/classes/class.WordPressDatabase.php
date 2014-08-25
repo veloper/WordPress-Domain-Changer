@@ -8,9 +8,9 @@ class WordPressDatabase extends Database {
         $this->table_prefix = $table_prefix;
     }
 
-    public function getTables() {
+    public function getValidTables() {
         $tables = array();
-        foreach(parent::getTables() as $table)
+        foreach($this->getTables() as $table)
             if(stripos($name, $this->table_prefix) === 0)
                 $tables[$table->name] = $table;
         return $tables;
@@ -25,7 +25,7 @@ class WordPressDatabase extends Database {
     }
 
     public function getOption( $name ) {
-        $results = $this->query('SELECT * FROM {$this->table_prefix}options WHERE option_name = ?;', $name);
+        $results = $this->query('SELECT * FROM {$this->table_prefix}options WHERE option_name = ?;', array($name));
         return !empty($results) ? (string) $results[0]['option_value'] : null;
     }
 
