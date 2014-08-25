@@ -16,13 +16,13 @@
 
 // ** MySQL settings - You can get this info from your web host ** //
 /** The name of the database for WordPress */
-define('DB_NAME', 'doezema');
+define('DB_NAME', 'wordpress_test');
 
 /** MySQL database username */
-define('DB_USER', 'test');
+define('DB_USER', 'wordpress_test');
 
 /** MySQL database password */
-define('DB_PASSWORD', 'test');
+define('DB_PASSWORD', 'wordpress_test');
 
 /** MySQL hostname */
 define('DB_HOST', 'localhost:8889');
@@ -54,7 +54,7 @@ define('NONCE_KEY', 'put your unique phrase here');
  * You can have multiple installations in one database if you give each a unique
  * prefix. Only numbers, letters, and underscores please!
  */
-$table_prefix  = 'test_wp_';
+$table_prefix  = 'wp_2_3_2_';
 
 /**
  * WordPress Localized Language, defaults to English.

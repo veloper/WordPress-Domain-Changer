@@ -1,51 +1,68 @@
-<form name="login" method="post" action="<?php echo $form_path; ?>">
-  <div class="col-md-6">
-
-    <div class="panel">
-      <div class="heading">
-        <h2 class="title engrave">WordPress Tables</h2>
-      </div>
-      <div class="body">
-        <ul style="font-size:0.8em">
-          <?php foreach($tables as $table => $table_info): ?>
-          <li>
-            <label><input type="checkbox" name="tables[<?php echo $table ?>]" value="1" checked /> <code><?php echo $table ?> - (<?php echo $table_info["rows"] ?> Record<?php echo $table_info["rows"] > 1 ? "s" : "" ?>)</code></label>
-            <ul>
-              <?php foreach($table_info["description"] as $column => $column_info): ?>
-              <?php if(!$column_info["is_stringish"]) continue; ?>
-              <li><label><input type="checkbox" name="tables[<?php echo $table ?>][columns][<?php echo $column ?>]" value="1" checked /> <code><?php echo $column ?></code></label></li>
+<div class="view_change">
+  <form name="change" method="post" action="<?php echo $form_path; ?>">
+    <div class="col-md-7">
+      <div class="panel">
+        <div class="heading">
+          <h2 class="title engrave">Tables &amp; Columns</h2>
+        </div>
+        <div class="body">
+          <div class="table-responsive">
+            <table class="table table-striped table-bordered table-condensed">
+              <thead>
+                <tr>
+                  <th class="checkbox"></th>
+                  <th>Table</th>
+                  <th>Rows</th>
+                  <th>Text-<em>ish</em> Columns</th>
+                </tr>
+              </head>
+              <tbody>
+                <tr>
+                  <td colspan="4" align="center" class="info"><em><strong>Note:</strong> Table prefix </em> <code>"<?php echo $this->htmlSafe($table_prefix) ?>"</code> <em> hidden for readability.</em></td>
+                </tr>
+              <?php foreach($tables as $table): ?>
+                <tr>
+                  <td class="checkbox"><input type="checkbox" name="table_<?php echo $table["name"] ?>" value="1" checked /></td>
+                  <td><code><?php echo str_replace($table_prefix, "", $table["name"]) ?></code></td>
+                  <td align="right"><?php echo $table["rows"] ?></td>
+                  <td>
+                    <?php foreach($table["stringish_fields"] as $field): ?>
+                      <span class="label label-default"><code><?php echo $field ?></code></span>
+                    <?php endforeach ?>
+                  </td>
+                </tr>
               <?php endforeach ?>
-            </ul>
-          </li>
-          <?php endforeach ?>
-        </ul>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="col-md-6">
-    <div class="panel">
-      <div class="heading">
-        <h2 class="title engrave">URL Find &amp; Replace</h2>
-      </div>
-      <div class="body">
-
-        <form method="post" action="<?php echo $form_path ?>">
-          <?php foreach($fields as $field): ?>
-            <label for="<?php echo $field["name"] ?>">
-              <?php echo $field["label"] ?>
-              <?php if($field["req"]): ?><sup title="Required Field">*</sup><?php endif; ?>
-            </label>
-            <div><input class="form-field <?php $field["req"] ? "required" : ""?>" type="text" id="host" name="<?php echo $field["name"] ?>" value="<?php echo $this->htmlSafe($field["value"]) ?>" /></div>
-          <?php endforeach; ?>
-
-          <div class="row">
-            <button class="pull-right btn-primary" type="submit" id="submit" name="submit">Next &raquo;</button>
+              </tbody>
+            </table>
           </div>
-        </form>
+        </div>
       </div>
-
     </div>
-  </div>
+
+    <div class="col-md-5">
+      <div class="panel">
+        <div class="heading">
+          <h2 class="title engrave">URL Find &amp; Replace</h2>
+        </div>
+        <div class="body">
+
+            <?php foreach($fields as $field): ?>
+              <label for="<?php echo $field["name"] ?>">
+                <?php echo $field["label"] ?>
+                <?php if($field["req"]): ?><sup title="Required Field">*</sup><?php endif; ?>
+              </label>
+              <div><input class="form-field <?php $field["req"] ? "required" : ""?>" type="text" id="host" name="<?php echo $field["name"] ?>" value="<?php echo $this->htmlSafe($field["value"]) ?>" /></div>
+            <?php endforeach; ?>
+
+            <div class="row">
+              <div class="col-md-12">
+                <button class="pull-right btn-primary" type="submit" id="submit" name="submit">Preview Changes &raquo;</button>
+              </div>
+            </div>
+        </div>
+
+      </div>
+    </div>
+
+  </form>
 </div>

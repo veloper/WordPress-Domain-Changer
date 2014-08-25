@@ -47,9 +47,11 @@
           <div><input class="form-field <?php $field["req"] ? "required" : ""?>" type="text" id="host" name="<?php echo $field["name"] ?>" value="<?php echo $this->htmlSafe($field["value"]) ?>" /></div>
         <?php endforeach; ?>
 
-        <div class="row">
-          <button class="pull-right btn-primary" type="submit" id="submit" name="submit">Next &raquo;</button>
-        </div>
+          <div class="row">
+            <div class="col-md-12">
+              <button class="pull-right btn-primary" type="submit" id="submit" name="submit">Next &raquo;</button>
+            </div>
+          </div>
       </form>
     </div>
   </div>

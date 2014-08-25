@@ -14,26 +14,22 @@
               <em>By <a href="http://dan.doezema.com" target="_blank">Daniel Doezema</a></em>
             </div>
           </div>
-          <div class="col-md-4">
-            <?php if($request->authenticated) : ?>
-              <div class="row">
-                <div class="col-md-8">
-                  <div class="header-block">
-                    <div class="session">
-                      <span class="title">Session Status</span>
-                      <span class="timer"><span class="minutes"></span>:<span class="seconds"></span> Remaining</span>
-                      <div class="green"></div>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="header-block">
-                    <a class="btn-primary pull-right" href="<?php echo $logout_path; ?>">Logout</a>
+          <?php if($request->authenticated) : ?>
+              <div class="col-md-3">
+                <div class="header-block">
+                  <div class="session">
+                    <span class="title">Session Status</span>
+                    <span class="timer"><span class="minutes"></span>:<span class="seconds"></span> Remaining</span>
+                    <div class="green"></div>
                   </div>
                 </div>
               </div>
-            <?php endif; ?>
-          </div>
+              <div class="col-md-1">
+                <div class="header-block">
+                  <a class="btn-primary pull-right" href="<?php echo $logout_path; ?>">Logout</a>
+                </div>
+              </div>
+          <?php endif; ?>
         </div>
       </div>
     </div>

@@ -1,8 +1,4 @@
 <?php
-require_once dirname( __FILE__ ) . '/../config.php';
-require_once dirname( __FILE__ ) . '/class.PhpFile.php';
-require_once dirname( __FILE__ ) . '/class.View.php';
-
 class BaseController {
 
     public $_http_status_codes = array(
@@ -63,11 +59,12 @@ class BaseController {
 
     public function addRoute( $verb, $path, $action, $options = array() ) {
         $route = array(
-            "verb"   => $verb,
-            "path"   => $path,
-            "action" => $action,
-            "auth"   => array_key_exists( "auth", $options ) ? (bool) $options["auth"] : false,
-            "root"   => array_key_exists( "root", $options ) ? (bool) $options["root"] : false
+            "verb"    => $verb,
+            "path"    => $path,
+            "action"  => $action,
+            "auth"    => array_key_exists( "auth", $options ) ? (bool) $options["auth"] : false,
+            "root"    => array_key_exists( "root", $options ) ? (bool) $options["root"] : false,
+            "options" => $options
         );
         $this->_routes[] = $route;
     }
@@ -128,13 +125,13 @@ class BaseController {
             $this->addFlash( "warning", "Login will remain DISABLED until the <code>WPDC_PASSWORD</code> constant is $verb_past_tense in the <code>wpdc/config.php</code> file." );
         }
 
-        if ( $this->isRequestProtected() && !$this->isAuthenticated() ) {
-            $this->addFlash( "error", "Your session has expired, please login again." );
-            $this->redirectToAction( "login" );
-        }
-
-        if ( $this->isAuthenticated() ) {
-            $this->renewAuthCookie();
+        if ( $this->isRequestProtected() ) {
+            if($this->isAuthenticated()) {
+                $this->renewAuthCookie();
+            } else  {
+                $this->addFlash( "error", "Your session has expired, please login again." );
+                return $this->redirectToAction( "login" );
+            }
         }
 
     }
@@ -163,8 +160,8 @@ class BaseController {
 
 
     public function render( $view_name ) {
-        $layout = new View( realpath( dirname( __FILE__ ) . "/../views/_layout.php" ) );
-        $view   = new View( realpath( dirname( __FILE__ ) . "/../views/" . $view_name . ".php" ) );
+        $layout = new View( realpath( dirname( __FILE__ ) . "/../../views/_layout.php" ) );
+        $view   = new View( realpath( dirname( __FILE__ ) . "/../../views/" . $view_name . ".php" ) );
 
         $this->data["current_user"] = (object) array(
             "authenticated" => $this->isAuthenticated(),
