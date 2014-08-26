@@ -49,6 +49,7 @@ class DatabaseTable {
 
       $meta = array();
       $row = $this->database->query("SHOW TABLE STATUS WHERE Name=?", array($this->name))[0];
+
       foreach ($mapping as $record_key => $mapped_key) $meta[$mapped_key] = $row[$record_key];
       return (object) $meta;
   }
@@ -58,6 +59,14 @@ class DatabaseTable {
     $columns = array();
     foreach($this->getColumns() as $column) if($column->is_stringish) $columns[] = $column;
     return $columns;
+  }
+
+  public function search($term)
+  {
+    $where = array();
+    foreach ($this->getStringishColumns() as $column) $where[] = $column->name . ' LIKE "%' . addcslashes($this->database->escape($term), "%_") . '%"';
+    $records = $this->database->getTableRecords("SELECT * FROM {$this->name} WHERE " . implode(" OR ", $where));
+    return $records;
   }
 
   public function getColumns()

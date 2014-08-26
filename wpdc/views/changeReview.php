@@ -1,5 +1,5 @@
 <div class="view_change_review">
-  <form name="change" method="post" action="<?php echo $form_path; ?>">
+  <form name="change" method="post" action="<?php echo ""; ?>">
     <div class="col-md-12">
       <div class="panel">
         <div class="heading">
@@ -10,14 +10,14 @@
             <table class="table table-striped table-bordered table-condensed">
               <thead>
                 <tr>
-                  <th class="checkbox"></th>
-                  <th>Table</th>
-                  <th>Rows</th>
-                  <th>Text-<em>ish</em> Columns</th>
+                  <th>Record</th>
                 </tr>
               </head>
               <tbody>
-              <?php foreach($tables as $table): ?>
+              <?php foreach($records as $record): ?>
+                <tr>
+                  <td><pre><?php print_r($record->attributes); ?></pre></td>
+                </tr>
               <?php endforeach ?>
               </tbody>
             </table>

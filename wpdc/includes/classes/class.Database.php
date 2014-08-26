@@ -21,9 +21,17 @@ class Database {
   public function getTables() {
     if (empty( $this->tables ) ) {
       $this->tables = array();
-      foreach ( $this->query( "SHOW TABLES" ) as $row ) $this->tables[current( $row )] = new DatabaseTable( $this, current( $row ) );
+      foreach ( $this->query( "SHOW TABLES" ) as $row ) {
+        $table = new DatabaseTable( $this, current( $row ) );
+        $this->tables[$table->name] = $table;
+      }
     }
     return $this->tables;
+  }
+
+  public function getTableByName($name)
+  {
+    return $this->getTables()[$name];
   }
 
   public function getTableNameFromSql( $sql ) {
@@ -34,7 +42,7 @@ class Database {
   public function getTableRecords( $query, $tokens = array() ) {
     $table = $this->getTables()[$this->getTableNameFromSql($query)];
     $records = array();
-    foreach($this->query( $query, $tokens ) as $row) $records[] = new DatabaseTableRecord($database, $table, $row);
+    foreach($this->query( $query, $tokens ) as $row) $records[] = new DatabaseTableRecord($this, $table, $row);
     return $records;
   }
 
@@ -98,7 +106,7 @@ class Database {
   }
 
   public function escape( $value ) {
-    return addcslashes( $this->connection->escape_string( $value ), '%_' );
+    return $this->connection->escape_string( $value );
   }
 
 

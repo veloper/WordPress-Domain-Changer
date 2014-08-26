@@ -10,22 +10,17 @@ class WordPressDatabase extends Database {
 
     public function getValidTables() {
         $tables = array();
-        foreach($this->getTables() as $table)
-            if(stripos($name, $this->table_prefix) === 0)
-                $tables[$table->name] = $table;
+        foreach($this->getTables() as $name => $table) {
+            if(stripos($name, $this->table_prefix) === false) continue;
+            if($table->getRowCount() <= 0) continue;
+            if(empty($table->getStringishColumns())) continue;
+            $tables[$name] = $table;
+        }
         return $tables;
     }
 
-    public function getPrefixedTableName( $table ) {
-        return $this->table_prefix . $table;
-    }
-
-    public function escape( $value ) {
-        return $this->getConnection()->escape_string( $value );
-    }
-
     public function getOption( $name ) {
-        $results = $this->query('SELECT * FROM {$this->table_prefix}options WHERE option_name = ?;', array($name));
+        $results = $this->query("SELECT * FROM {$this->table_prefix}options WHERE option_name = ?", array($name));
         return !empty($results) ? (string) $results[0]['option_value'] : null;
     }
 

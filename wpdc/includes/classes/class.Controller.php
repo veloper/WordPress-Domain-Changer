@@ -131,7 +131,7 @@ class Controller extends BaseController {
             }
         }
 
-        $this->data["tables"] = $this->getAvailableTables();
+        $this->data["tables"] = $this->db()->getValidTables();
 
         return $this->render("change");
     }
@@ -142,6 +142,19 @@ class Controller extends BaseController {
         $find    = $post["old_url"];
         $replace = $post["new_url"];
 
+        $valid_tables = $this->db()->getValidTables();
+        $selected_tables = array();
+        foreach(array_keys($post) as $key) {
+            $select_table_name = str_replace("table_", "", $key);
+            if(isset($valid_tables[$select_table_name])) $selected_tables[$select_table_name] = $valid_tables[$select_table_name];
+        }
+
+        $records = array();
+        foreach($selected_tables as $table) {
+            $records = array_merge($records, $table->search($find));
+        }
+
+        $this->data["records"] = $records;
 
         return $this->render("changeReview");
     }
@@ -153,13 +166,6 @@ class Controller extends BaseController {
     }
 
     // =========== Helpers
-
-    public function getAvailableTables($value='')
-    {
-        $tables = array();
-        foreach($this->db()->getTables() as $table) $tables[] = $table;
-        return $tables;
-    }
 
     public function getDatabaseChanges($tables) {
 

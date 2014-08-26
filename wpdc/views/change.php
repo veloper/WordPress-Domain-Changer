@@ -1,5 +1,5 @@
 <div class="view_change">
-  <form name="change" method="post" action="<?php echo $form_path; ?>">
+  <form name="change" method="POST" action="<?php echo $form_path; ?>">
     <div class="col-md-7">
       <div class="panel">
         <div class="heading">
