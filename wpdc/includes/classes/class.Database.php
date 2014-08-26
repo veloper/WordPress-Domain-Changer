@@ -72,8 +72,6 @@ class Database {
     return $replacement;
   }
 
-
-
   public function isConnected() {
     return $this->getLastError() ? false : true;
   }

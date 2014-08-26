@@ -145,16 +145,18 @@ class Controller extends BaseController {
         $valid_tables = $this->db()->getValidTables();
         $selected_tables = array();
         foreach(array_keys($post) as $key) {
-            $select_table_name = str_replace("table_", "", $key);
-            if(isset($valid_tables[$select_table_name])) $selected_tables[$select_table_name] = $valid_tables[$select_table_name];
+            $table_name = str_replace("table_", "", $key);
+            if(isset($valid_tables[$table_name])) $selected_tables[$table_name] = $valid_tables[$table_name];
         }
 
-        $records = array();
+        $table_alterations = array();
         foreach($selected_tables as $table) {
-            $records = array_merge($records, $table->search($find));
+            $alterations = array();
+            foreach($table->search($find) as $record) $alterations = array_merge($alterations, $record->getAlterations($find, $replace));
+            if(!empty($alterations)) $table_alterations[$table->name] = $alterations;
         }
 
-        $this->data["records"] = $records;
+        $this->data["table_alterations"] = $table_alterations;
 
         return $this->render("changeReview");
     }

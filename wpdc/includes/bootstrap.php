@@ -10,8 +10,8 @@ error_reporting(E_ALL);
 require_once dirname(__FILE__) . '/../config.php';
 
 require_once 'classes/class.PhpFile.php';
-require_once 'classes/class.SerializedString.php';
-require_once 'classes/class.FineDiff.php';
+require_once 'classes/class.PhpSerializedString.php';
+require_once 'classes/class.diff_match_patch.php';
 
 require_once 'classes/class.Database.php';
 require_once 'classes/class.DatabaseTable.php';

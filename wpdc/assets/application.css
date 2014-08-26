@@ -39,6 +39,22 @@ ul li {
 ul li ul {
   margin-top: .25em;
 }
+
+ins {
+    background-color: #c6ffc6;
+    text-decoration: none;
+}
+
+del {
+    background-color: #ffc6c6;
+}
+
+td pre {
+  margin:0;
+  padding:0;
+}
+
+
 /* == Layout == */
 
 body {
@@ -96,7 +112,7 @@ body {
 .panel .heading h2 {
   position:absolute;
   top:-3px;
-  left:20px;
+  left:25px;
   padding:7px 5px 6px 5px;
   font-size:1.25em;
 
@@ -120,6 +136,16 @@ body {
 
 .panel .body {
   padding: 0 25px 25px 25px;
+}
+
+.panel .panel {
+  box-shadow: 0 0 3px black;
+}
+
+.panel .panel .heading h2 {
+  top: 0px;
+  background: #F0F0F0;
+  padding: 5px 5px 7px 5px;
 }
 
 /* == Components == */
@@ -330,11 +356,7 @@ div.action {
   margin: 5px 0 0 0;
 }
 
-.view_change table {
-  font-size: .9em;
-}
-
-.view_change table .checkbox {
+table .checkbox {
   width:30px;
   text-align: center;
 }
