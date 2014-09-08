@@ -9,10 +9,9 @@ class PhpSerializedString {
      *
      * @return void
      */
-    public function __construct($string) {
+    public function __construct( $string ) {
         $this->string = $string;
     }
-
 
     /**
      * Replace $find with $replace in a string segment and still keep the integrity of the PHP serialized string.
@@ -26,82 +25,81 @@ class PhpSerializedString {
      * @param string;
      * @return string;
      */
-    public function replace($find, $replace) {
-        $length_diff    = strlen($replace) - strlen($find);
-        $find_escaped   = $this->preg_quote($find, '!');
-        $encoded_string = $this->encodeDoubleQuotes($this->string);
-        if(preg_match_all('!s:([0-9]+):"([^"]*?' . $find_escaped . '{1}.*?)";!', $encoded_string, $encoded_matches)) {
-            $matches     = array_map(array($this, 'decodeDoubleQuotes'), $encoded_matches);
-            $match_count = count($matches[0]);
-            for($i = 0; $i < $match_count; $i++) {
-                $new_string   = str_replace($find, $replace, $matches[2][$i], $replace_count);
-                $new_length   = ((int) $matches[1][$i]) + ($length_diff * $replace_count);
-                $this->string = str_replace($matches[0][$i], 's:'.$new_length.':"'.$new_string.'";', $this->string);
-            }
+    public function replace( $find, $replace ) {
+        while ( mb_stripos( $this->string, $find ) !== false ) {
+            $this->string = $this->replaceFirstOccurance( $find, $replace, $this->string);
         }
         return $this;
     }
 
+    /**
+     * Return $this->string property
+     *
+     * @return string;
+     */
     public function toString() {
         return $this->string;
     }
 
     /**
-     * Returns true if $string is detected to be php serialized.
+     * Returns true if a php serialized string is contained in $string.
      *
      * @param string;
      * @return boolean;
      */
-    public static function test($string) {
-        return preg_match('/s:[0-9]+:".*";/', $string);
+    public static function detect( $string ) {
+        return preg_match( '/s:[0-9]+:".*";/', $string );
     }
 
-    /**
-     * Enhanced version of preg_quote() that works properly in PHP < 5.3
-     *
-     * @param string;
-     * @param mixed; string, null default
-     * @return string;
-     */
-    private function preg_quote($string, $delimiter = null) {
-        $string = preg_quote($string, $delimiter);
-        if(phpversion() < 5.3) $string = str_replace('-', '\-', $string);
-        return $string;
-    }
+    protected function replaceFirstOccurance( $find, $replace, $string ) {
+        $length_diff     = mb_strlen( $replace ) - mb_strlen( $find );
+        $offset_of_match = mb_stripos( $string, $find );
+        if ( $offset_of_match !== false ) {
+            $characters = $this->getCharacters( $string );
 
-    /**
-     * Replaces any occurrence of " (double quote character) within the value
-     * of a serialized string segment with [DOUBLE_QUOTE]. This allows for RegExp
-     * to properly capture string segment values in the replace() method.
-     *
-     * Example:
-     *  ... s:13:"look "a" string"; ...
-     *  encodeDoubleQuotes($serialized_string)
-     *  ... s:13:"look [DOUBLE_QUOTE]a[DOUBLE_QUOTE] string"; ...
-     *
-     * @param string;
-     * @return string;
-     */
-    public function encodeDoubleQuotes($string) {
-        if(preg_match_all('!s:[0-9]+:"(.+?)";!', $string, $matches)) {
-            foreach($matches[1] as $match) {
-                $string = str_replace($match, str_replace('"', '[DOUBLE_QUOTE]', $match), $string);
-            }
+            // Substring Find & Replace
+            $replacement = $this->getCharacters( $replace );
+            $length      = mb_strlen( $find );
+            array_splice( $characters, $offset_of_match, $length, $replacement );
+
+            // Serialized string definition's length
+            $offset_of_def    = $this->getStringDefinitionOffset( $characters, $offset_of_match );
+            $offset_of_length = $offset_of_def + 2;
+
+            preg_match( '/s:([0-9]+)/', $this->getStringDefinition( $characters, $offset_of_def ), $matches );
+
+            $old_length = (int) $matches[1];
+            $new_length = $old_length + $length_diff;
+
+            $replacement = $this->getCharacters( (string) $new_length );
+            $length      = mb_strlen( (string) $old_length );
+            array_splice( $characters, $offset_of_length, $length, $replacement );
+
+            $string = implode( "", $characters );
         }
         return $string;
     }
 
+    protected function getStringDefinition( $characters, $offset ) {
+        $string = "";
+        $count  = count( $characters );
+        for ( $i = $offset; $i <= $count; $i++ ) {
+            $string .= $characters[$i];
+            if ( preg_match( "/^s:[0-9]+:$/", $string ) ) break;
+        }
+        return $string;
+    }
 
+    protected function getStringDefinitionOffset( $characters, $offset ) {
+        for ( $i = $offset; $i > 0; $i-- ) if ( preg_match( "/s:[0-9]/", implode( "", array_slice( $characters, $i, 3 ) ) ) ) return $i;
+        return false;
+    }
 
-    /**
-     * Undoes the changes that self::encodeDoubleQuotes() made to a string.
-     *
-     * @see self::encodeDoubleQuotes();
-     * @param string;
-     * @return string;
-     */
-    public function decodeDoubleQuotes($string) {
-        return str_replace('[DOUBLE_QUOTE]', '"', $string);
+    protected function getCharacters( $string ) {
+        $stop   = mb_strlen( $string );
+        $result = array();
+        for ( $i = 0; $i < $stop; $i++ ) $result[] = mb_substr( $string, $i, 1 );
+        return $result;
     }
 
 }
