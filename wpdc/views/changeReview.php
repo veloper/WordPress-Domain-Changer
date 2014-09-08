@@ -1,15 +1,18 @@
+<?php
+  $queries = 0;
+  foreach($results as $result) $queries += count($result["alterations"]);
+?>
 <div class="view_change_review">
   <form name="change" method="post">
     <div class="col-md-12">
       <div class="panel">
         <div class="heading">
-          <h2 class="title engrave">Review Database Changes</h2>
+          <h2 class="title engrave">Review &amp; Confirm Changes</h2>
         </div>
         <div class="body">
           <table class="table table-striped table-bordered table-condensed">
             <thead>
               <tr>
-                <th class="checkbox"></th>
                 <th>Table</th>
                 <th>Fields</th>
                 <th>Queries</th>
@@ -19,7 +22,6 @@
 
             <?php foreach($results as $result): ?>
               <tr>
-                <td class="checkbox"><input type="checkbox" name="" value="1" checked /></td>
                 <td><code><?php echo $result["table"]->name; ?></code></td>
                 <td>
                   <?php foreach($result["stringish_columns"] as $column): ?>
@@ -33,7 +35,7 @@
             </tbody>
           </table>
           <div>
-            <a class="btn-primary">Confirm &amp; Execute Queries</a>
+            <a class="btn-primary">&laquo; Back<a class="pull-right btn-primary btn-danger">Confirm &amp; Execute All <?php echo $queries; ?> Queries</a>
           </div>
       </div>
     </div>

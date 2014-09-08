@@ -298,6 +298,17 @@ body {
   text-shadow:none;
 }
 
+.btn-primary.btn-danger {
+  border-color: #9C1C1C;
+  background: #EE3737;
+  background: linear-gradient(top,  #EE0000,  #CF3434);
+  background: -ms-linear-gradient(top,  #EE0000,  #CF3434);
+  background: -webkit-gradient(linear, left top, left bottom, from(#EE0000), to(#CF3434));
+  background: -moz-linear-gradient(top,  #EE0000,  #CF3434);
+  color:white;
+  text-shadow: 1px 1px 0px #942E2E;
+}
+
 .form-field {
   border: 1px solid #265DB1;
 

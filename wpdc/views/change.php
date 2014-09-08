@@ -56,7 +56,7 @@
 
             <div class="row">
               <div class="col-md-12">
-                <button class="pull-right btn-primary" type="submit" id="submit" name="submit">Preview Changes &raquo;</button>
+                <button class="pull-right btn-primary" type="submit" id="submit" name="submit">Find &amp; Review Changes &raquo;</button>
               </div>
             </div>
         </div>
