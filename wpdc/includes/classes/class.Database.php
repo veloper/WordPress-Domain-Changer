@@ -1,4 +1,5 @@
 <?php
+mb_internal_encoding('UTF-8');
 class Database {
 
   protected $credentials = null;
@@ -50,12 +51,16 @@ class Database {
     $result = $this->getConnection()->query( $this->getPreparedSql( $query, $tokens ) );
     $rows = array();
     if ( is_object( $result ) && ( $result->num_rows > 0 ) ) while ( $row = $result->fetch_assoc() ) $rows[] = $row;
+    foreach($rows as $key => $value) {
+      foreach($value as $value) if(mb_stripos($str = $value, "????") !== false) die("found in " . $str);
+    }
     return $rows;
   }
 
   public function getPreparedSql( $query, $tokens = array() ) {
     if ( substr_count( $query, "?" ) != count( $tokens ) ) throw new Exception( "Database->getPreparedSql(): Token count missmatch." );
-    foreach ( $tokens as $token ) $query = preg_replace( "/\?/", $this->getEscapedSqlFromValue( $token ), $query, 1 );
+    $query = str_replace('?', '[________?________]', $query);
+    foreach ( $tokens as $token ) $query = preg_replace( "/\[________\?________\]/", $this->getEscapedSqlFromValue( $token ), $query, 1 );
     return $query;
   }
 
@@ -95,6 +100,9 @@ class Database {
           $this->credentials->port
         );
         if ( mysqli_connect_error() ) throw Exception( mysqli_connect_errno() . " - " . mysqli_connect_error() );
+
+        $this->connection->set_charset("utf8");
+        if ( $this->connection->error ) throw Exception( "Error loading character set utf8: {$mysqli->error}" );
       } catch ( Exception $e ) {
         $this->last_error = $e->getMessage();
         $this->connection = false;

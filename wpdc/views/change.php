@@ -18,7 +18,7 @@
               </head>
               <tbody>
                 <tr>
-                  <td colspan="4" align="center" class="info"><em><strong>Note:</strong> Table prefix </em> <code>"<?php echo $this->htmlSafe($table_prefix) ?>"</code> <em> hidden for readability.</em></td>
+                  <td colspan="4" align="center" class="info"><em><strong>Note:</strong> Table prefix </em> <code>"<?php echo $this->htmlEncode($table_prefix) ?>"</code> <em> hidden for readability.</em></td>
                 </tr>
               <?php foreach($tables as $table): ?>
                 <tr>
@@ -51,7 +51,7 @@
                 <?php echo $field["label"] ?>
                 <?php if($field["req"]): ?><sup title="Required Field">*</sup><?php endif; ?>
               </label>
-              <div><input class="form-field <?php $field["req"] ? "required" : ""?>" type="text" id="host" name="<?php echo $field["name"] ?>" value="<?php echo $this->htmlSafe($field["value"]) ?>" /></div>
+              <div><input class="form-field <?php $field["req"] ? "required" : ""?>" type="text" id="host" name="<?php echo $field["name"] ?>" value="<?php echo $this->htmlEncode($field["value"]) ?>" /></div>
             <?php endforeach; ?>
 
             <div class="row">

@@ -49,11 +49,63 @@ del {
     background-color: #ffc6c6;
 }
 
+table {
+  table-layout: fixed;
+}
+
 td pre {
   margin:0;
   padding:0;
 }
 
+table tbody tr td div.sql {
+  background-color: #E6E6E6;
+  font-family: Consolas, monaco, monospace;
+  font-size: 12px;
+}
+table tbody tr td div.sql ol {
+  margin:0;
+  padding:0;
+}
+table tbody tr td div.sql ol li {
+  list-style-position:inside;
+  padding:2px 4px 0 4px;
+  overflow:auto;
+}
+
+table tbody tr td div.sql ol li.odd {
+  background-color: #F1F1F1;
+  border-radius: 2px;
+}
+
+table tbody tr td div.sql ol li:hover {
+  background-color: #FFFBE0;
+}
+
+span.sql_string {
+  color:blue;
+}
+
+span.sql_backtick {
+  color:#870F9B;
+  font-weight: bold;
+}
+
+span.sql_keyword {
+  color:black;
+  font-weight: bold;
+}
+
+span.sql_string span.sql_keyword, span.sql_backtick span.sql_keyword  {
+  color:inherit;
+  font-weight: inherit;
+}
+
+span.highlight {
+  color:white;
+  background-color: green;
+  font-weight: bold;
+}
 
 /* == Layout == */
 
@@ -197,10 +249,6 @@ body {
   background-color: #F00;
   box-shadow: inset 0 0 16px 0px #9A0000;
 }
-
-
-
-
 
 /* == Buttons == */
 
@@ -359,6 +407,11 @@ div.action {
 table .checkbox {
   width:30px;
   text-align: center;
+}
+
+table.diffs {
+  width: 500px;
+  overflow: scroll;
 }
 
 /* == Large Patterns Below == */

@@ -11,7 +11,6 @@ require_once dirname(__FILE__) . '/../config.php';
 
 require_once 'classes/class.PhpFile.php';
 require_once 'classes/class.PhpSerializedString.php';
-require_once 'classes/class.diff_match_patch.php';
 
 require_once 'classes/class.Database.php';
 require_once 'classes/class.DatabaseTable.php';

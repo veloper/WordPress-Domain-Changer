@@ -149,14 +149,23 @@ class Controller extends BaseController {
             if(isset($valid_tables[$table_name])) $selected_tables[$table_name] = $valid_tables[$table_name];
         }
 
-        $table_alterations = array();
+
+        $results = array();
         foreach($selected_tables as $table) {
-            $alterations = array();
-            foreach($table->search($find) as $record) $alterations = array_merge($alterations, $record->getAlterations($find, $replace));
-            if(!empty($alterations)) $table_alterations[$table->name] = $alterations;
+            $result = array(
+                "table"             => $table,
+                "stringish_columns" => $table->getStringishColumns(),
+                "alterations"       => $table->getAlterations($find, $replace)
+            );
+            if(!empty($result["alterations"])) $results[] = $result;
         }
 
-        $this->data["table_alterations"] = $table_alterations;
+        // Sort
+        $counts = array();
+        foreach($results as $key => $row) $counts[$key] = count($row['alterations']);
+        array_multisort($counts, SORT_DESC, $results);
+
+        $this->data["results"] = $results;
 
         return $this->render("changeReview");
     }

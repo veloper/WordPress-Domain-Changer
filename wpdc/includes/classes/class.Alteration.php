@@ -2,17 +2,25 @@
 
 class Alteration {
 
-  public $record    = null;
-  public $attribute = null;
-  public $find      = null;
-  public $replace   = null;
+  public $record;
+  public $attribute;
+  public $find;
+  public $replace;
 
-  public function __construct($record, $attribute, $find, $replace)
-  {
+  public $original_value;
+  public $altered_value;
+
+  protected $is_serialized;
+
+  public function __construct( $record, $attribute, $find, $replace ) {
     $this->record    = $record;
     $this->attribute = $attribute;
     $this->find      = $find;
     $this->replace   = $replace;
+
+    $this->original_value = $this->record->attributes[$this->attribute];
+
+    $this->is_serialized = PhpSerializedString::detect( $this->original_value  );
   }
 
   public function getTableName() {
@@ -23,33 +31,30 @@ class Alteration {
     return $this->attribute;
   }
 
-  public function getOriginalValue()
-  {
-    return $this->record->attributes[$this->attribute];
+  public function getOriginalValue() {
+    return $this->original_value;
   }
 
+  public function getAlteredValue() {
+    if ( !$this->altered_value ) {
+      $original = $this->getOriginalValue();
 
-  public function getAlteredValue()
-  {
-    $altered  = "";
-    $original = $this->getOriginalValue();
-
-    if(PhpSerializedString::test($original)) {
-      $string = new PhpSerializedString($original);
-      $altered = $string->replace($this->find, $this->replace)->toString();
-    } else {
-      $altered = str_ireplace($this->find, $this->replace, $original);
+      if ( $this->is_serialized ) {
+        $string = new PhpSerializedString( $original );
+        $this->altered_value = $string->replace( $this->find, $this->replace )->toString();
+      } else {
+        $this->altered_value = str_ireplace( $this->find, $this->replace, $original );
+      }
     }
-
-    return $altered;
+    return $this->altered_value;
   }
 
-  public function getDiff()
-  {
-    $diff = new diff_match_patch();
-    $main_diff = $diff->diff_main($this->getOriginalValue(), $this->getAlteredValue());
-    $diff->diff_cleanupSemantic($main_diff);
-    return $diff->diff_prettyHtml($main_diff);
+  public function toSql() {
+    if($this->is_serialized) {
+      return $this->record->getSaveSql(array($this->attribute => $this->getAlteredValue()));
+    } else {
+      return $this->record->getSaveSql(array($this->attribute => array($this->find, $this->replace)));
+    }
   }
 
 }

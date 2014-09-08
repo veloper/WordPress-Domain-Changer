@@ -42,7 +42,7 @@ class DatabaseTableRecord {
     foreach(array_keys($this->getPrimaryKeyAttributes()) as $key) if(strlen($key) > $max_key_length) $max_key_length = strlen($key);
 
     $return = array();
-    foreach($this->getPrimaryKeyAttributes() as $key => $value) $return[] =  str_pad($key, $max_key_length, " ", STR_PAD_LEFT) . ": $value";
+    foreach($this->getPrimaryKeyAttributes() as $key => $value) $return[] = str_pad($key, $max_key_length, " ", STR_PAD_LEFT) . ": $value";
     return implode("\n", $return);
   }
 
@@ -53,23 +53,43 @@ class DatabaseTableRecord {
     return $primary_key_attributes;
   }
 
-  public function update()
+  public function save()
   {
-    $changed = $this->getChangedAttributes();
+    $sql = $this->getSaveSql();
+    $this->database->query($sql);
+  }
+
+  public function getSaveSql($attributes = null)
+  {
+    $tokens = array();
+
 
     $set = array();
-    foreach($changed as $column_name => $value) $set[] = "$column_name=?";
-    $set = implode(',', $set);
+    $changed_attributes = is_array($attributes) ? $attributes : $this->getChangedAttributes();
+    foreach($changed_attributes as $column_name => $value) {
+      if(is_array($value) && count($value) == 2) {
+        list($find, $replace) = $value;
+        $set[] = "`$column_name`=REPLACE(`$column_name`, ?, ?)";
+        $tokens[] = $find;
+        $tokens[] = $replace;
+      } else {
+        $set[] = "`$column_name`=?";
+        $tokens[] = $value;
+      }
+    }
+    $set = implode(', ', $set);
 
-    $primary_key_attributes = $this->getPrimaryKeyAttributes();
 
     $where = array();
-    foreach(array_keys($primary_key_attributes) as $column_name) $where[] = "{$column_name} = ?";
+    foreach($this->getPrimaryKeyAttributes() as $column_name => $value)  {
+      $where[] = "`$column_name`=?";
+      $tokens[] = $value;
+    }
     $where = implode(' AND ', $where);
 
-    $tokens = array_merge(array_values($changed), array_values($primary_key_attributes));
+    $sql = $this->database->getPreparedSql("UPDATE `{$this->table->name}` SET $set WHERE $where", $tokens);
 
-    $this->database->query("UPDATE {$this->table->name} SET $set WHERE $where", $tokens);
+    return $sql;
   }
 
   public function identity() {

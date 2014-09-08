@@ -7,8 +7,26 @@ class View {
         $this->path = $path;
     }
 
-    public function htmlSafe($value) {
-        return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+    public function htmlEncode($value) {
+        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    }
+
+    public function htmlEncodeSql($sql)
+    {
+        $encodedSql = $this->htmlEncode($sql);
+
+        $keywords = array("SELECT", "DELETE", "INSERT", "UPDATE", "FROM", "WHERE", "SET", "VALUES", "LIMIT", "REPLACE", "GROUP BY", "DESC", "ASC", "AND", "OR", "IN");
+        foreach ($keywords as $keyword) $encodedSql = str_replace($keyword, "<span class='sql_keyword'>$keyword</span>", $encodedSql);
+
+        $encodedSql = preg_replace('/([^\\\\])&quot;(.*?)([^\\\\])&quot;/', "$1<span class='sql_string'>&quot;$2$3&quot;</span>", $encodedSql);
+        $encodedSql = preg_replace('/([^\\\\])`(.*?)([^\\\\])`/', "$1<span class='sql_backtick'>`$2$3`</span>", $encodedSql);
+
+        return $encodedSql;
+    }
+
+    public function highlight($needle, $haystack)
+    {
+        return str_ireplace($needle, "<span class='highlight'>$needle</span>", $haystack);
     }
 
     public function getFlashMessages()

@@ -6,7 +6,7 @@
     </div>
     <div class="body">
       <h3>File Path</h3>
-      <p><?php echo $this->htmlSafe($config["file"]->getPath()) ?></p>
+      <p><?php echo $this->htmlEncode($config["file"]->getPath()) ?></p>
       <h3>Database Settings</h3>
 
       <ul>
@@ -14,7 +14,7 @@
           <strong><code>Constants</code></strong>
           <ul>
             <?php foreach($config["constants"] as $name => $value): ?>
-            <li><code><?php echo str_replace(" ", "&nbsp;", str_pad($this->htmlSafe($name), 13, " ")) ?> &rarr; <?php echo $this->htmlSafe($value) ?></code></li>
+            <li><code><?php echo str_replace(" ", "&nbsp;", str_pad($this->htmlEncode($name), 13, " ")) ?> &rarr; <?php echo $this->htmlEncode($value) ?></code></li>
             <?php endforeach; ?>
           </ul>
         </li>
@@ -22,7 +22,7 @@
           <strong><code>Variables</code></strong>
           <ul>
             <?php foreach($config["variables"] as $name => $value): ?>
-            <li><code>$<?php echo str_replace(" ", "&nbsp;", str_pad($this->htmlSafe($name), 12, " ")) ?> &rarr; <?php echo $this->htmlSafe($value) ?></code></li>
+            <li><code>$<?php echo str_replace(" ", "&nbsp;", str_pad($this->htmlEncode($name), 12, " ")) ?> &rarr; <?php echo $this->htmlEncode($value) ?></code></li>
             <?php endforeach; ?>
           </ul>
         </li>
@@ -44,7 +44,7 @@
             <?php echo $field["label"] ?>
             <?php if($field["req"]): ?><sup title="Required Field">*</sup><?php endif; ?>
           </label>
-          <div><input class="form-field <?php $field["req"] ? "required" : ""?>" type="text" id="host" name="<?php echo $field["name"] ?>" value="<?php echo $this->htmlSafe($field["value"]) ?>" /></div>
+          <div><input class="form-field <?php $field["req"] ? "required" : ""?>" type="text" id="host" name="<?php echo $field["name"] ?>" value="<?php echo $this->htmlEncode($field["value"]) ?>" /></div>
         <?php endforeach; ?>
 
           <div class="row">

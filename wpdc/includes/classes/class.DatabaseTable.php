@@ -61,6 +61,17 @@ class DatabaseTable {
     return $columns;
   }
 
+  public function getAlterations($find, $replace)
+  {
+    $alterations = array();
+    foreach($this->search($find) as $record) {
+        foreach($record->getAlterations($find, $replace) as $alteration) {
+            $alterations[] = $alteration;
+        }
+    }
+    return $alterations;
+  }
+
   public function search($term)
   {
     $where = array();

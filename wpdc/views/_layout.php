@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>WordPress Domain Changer by Daniel Doezema</title>
     <link rel="stylesheet" type="text/css" href="<?php echo $request->assets_url; ?>/application.css"></link>
   </head>
