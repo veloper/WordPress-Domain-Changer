@@ -1,13 +1,11 @@
 <?php
 
-error_reporting(E_ALL);
+error_reporting( E_ALL );
 
-// if($_ENV["WPDC_ENV"] == "test") {
-//     $path = "";
-//     set_include_path(get_include_path() . PATH_SEPARATOR . $path);
-// }
+define( "WPDC_ROOT_DIR", realpath( dirname( __FILE__ ) . '/../../' ) );
+define( "WP_ROOT_DIR", realpath( WPDC_ROOT_DIR . '/../../' ) );
 
-require_once dirname(__FILE__) . '/../config.php';
+require_once dirname( __FILE__ ) . '/../config.php';
 
 require_once 'classes/class.PhpFile.php';
 require_once 'classes/class.PhpSerializedString.php';

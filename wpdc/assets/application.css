@@ -82,6 +82,10 @@ table tbody tr td div.sql ol li:hover {
   background-color: #FFFBE0;
 }
 
+table tbody tr.disabled {
+  opacity:0.5;
+}
+
 span.sql_string {
   color:blue;
 }
@@ -306,7 +310,7 @@ body {
   background: -webkit-gradient(linear, left top, left bottom, from(#EE0000), to(#CF3434));
   background: -moz-linear-gradient(top,  #EE0000,  #CF3434);
   color:white;
-  text-shadow: 1px 1px 0px #942E2E;
+  text-shadow: 1px 2px 0 #942E2E;
 }
 
 .form-field {

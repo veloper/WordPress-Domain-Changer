@@ -1,6 +1,5 @@
 <?php
-  $queries = 0;
-  foreach($results as $result) $queries += count($result["alterations"]);
+$alterations_exist = (count($results) > 0);
 ?>
 <div class="view_change_review">
   <form name="change" method="post">
@@ -14,29 +13,46 @@
             <thead>
               <tr>
                 <th>Table</th>
-                <th>Fields</th>
-                <th>Queries</th>
+                <th>Text-<em>ish</em> Columns</th>
+                <th width="100">Changes</th>
               </tr>
             </head>
             <tbody>
 
-            <?php foreach($results as $result): ?>
+            <?php if($alterations_exist): ?>
+
+              <?php foreach($results as $result): ?>
+                <tr>
+                  <td><code><?php echo $result["table"]->name; ?></code></td>
+                  <td>
+                    <?php foreach($result["table"]->getStringishColumns() as $column): ?>
+                      <span class="label label-default"><code><?php echo $column->name ?></code></span>
+                    <?php endforeach; ?>
+                  </td>
+                  <td align="right"><pre><?php echo count($result["alterations"]) ?></pre></td>
+                </tr>
+              <?php endforeach; ?>
+
+            <?php else: ?>
               <tr>
-                <td><code><?php echo $result["table"]->name; ?></code></td>
-                <td>
-                  <?php foreach($result["stringish_columns"] as $column): ?>
-                    <span class="label label-default"><code><?php echo $column->name ?></code></span>
-                  <?php endforeach ?>
-                </td>
-                <td align="right"><pre><?php echo count($result["alterations"]) ?></pre></td>
-              </tr>
-            <?php endforeach; ?>
+                  <td rowspan="3"></td>
+
+
+            <?php endif; ?>
 
             </tbody>
           </table>
-          <div>
-            <a class="btn-primary">&laquo; Back<a class="pull-right btn-primary btn-danger">Confirm &amp; Execute All <?php echo $queries; ?> Queries</a>
+          <div class="row">
+            <div class="col-md-6">
+              <button type="button" class="btn-primary" onclick="window.location=this.getAttribute('data-href')" data-href="<?php echo $this->htmlEncode($back_path); ?>">&laquo; Back</button>
+            </div>
+            <div class="col-md-6">
+              <?php if($alterations_exist): ?>
+                <button type="submit" class="pull-right btn-primary btn-danger" onclick="return confirm('Are you sure?');">Confirm &amp; Apply Changes &raquo;</button>
+              <?php endif; ?>
+            </div>
           </div>
+        </div>
       </div>
     </div>
   </form>

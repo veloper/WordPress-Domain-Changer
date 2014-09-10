@@ -54,6 +54,7 @@ class DatabaseTable {
       return (object) $meta;
   }
 
+
   public function getStringishColumns()
   {
     $columns = array();
@@ -70,6 +71,11 @@ class DatabaseTable {
         }
     }
     return $alterations;
+  }
+
+  public function getRecordsWhere($where_sql_fragment, $tokens = array())
+  {
+    return $this->database->getTableRecords("SELECT * FROM {$this->name} WHERE $where_sql_fragment", $tokens);
   }
 
   public function search($term)

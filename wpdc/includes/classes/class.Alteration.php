@@ -50,11 +50,17 @@ class Alteration {
   }
 
   public function toSql() {
+    $sql = "";
     if($this->is_serialized) {
-      return $this->record->getSaveSql(array($this->attribute => $this->getAlteredValue()));
+      $sql = $this->record->getSaveSql(array($this->attribute => $this->getAlteredValue()));
     } else {
-      return $this->record->getSaveSql(array($this->attribute => array($this->find, $this->replace)));
+      if(empty($this->find)) {
+        $sql = $this->record->getSaveSql(array($this->attribute => $this->replace));
+      } else {
+        $sql = $this->record->getSaveSql(array($this->attribute => array($this->find, $this->replace)));
+      }
     }
+    return $sql;
   }
 
 }

@@ -12,7 +12,7 @@
                 <tr>
                   <th class="checkbox"></th>
                   <th>Table</th>
-                  <th>Rows</th>
+                  <th width="60">Rows</th>
                   <th>Text-<em>ish</em> Columns</th>
                 </tr>
               </head>

@@ -150,15 +150,8 @@ class Controller extends BaseController {
         }
 
 
-        $results = array();
-        foreach($selected_tables as $table) {
-            $result = array(
-                "table"             => $table,
-                "stringish_columns" => $table->getStringishColumns(),
-                "alterations"       => $table->getAlterations($find, $replace)
-            );
-            if(!empty($result["alterations"])) $results[] = $result;
-        }
+        $results = $this->getAlterationsForTables($selected_tables, $find, $replace);
+
 
         // Sort
         $counts = array();
@@ -166,8 +159,34 @@ class Controller extends BaseController {
         array_multisort($counts, SORT_DESC, $results);
 
         $this->data["results"] = $results;
+        $this->data["back_path"] = $this->getActionUrl("change");
 
         return $this->render("changeReview");
+    }
+
+    public function getAlterationsForTables(array $tables, $find, $replace)
+    {
+        $output = array();
+        foreach($tables as $table) {
+            $array = array(
+                "table"       => $table,
+                "alterations" => $table->getAlterations($find, $replace)
+            );
+
+            if(mb_stripos($table->name, "options") !== false) {
+                foreach($table->getRecordsWhere("option_name = ?", array("upload_path")) as $record) {
+                    $old_upload = $record->attributes["option_value"];
+                    $new_upload = dirname( WP_ROOT_DIR ) . '/wp-content/uploads';
+                    if($alteration = $record->getAlterationFor("option_value", $old_upload, $new_upload )) {
+                        $array["alterations"][] = $alteration;
+                        echo $alteration->toSql();
+                    }
+                }
+            }
+
+            if(!empty($array["alterations"])) $output[] = $array;
+        }
+        return $output;
     }
 
 
@@ -200,20 +219,25 @@ class Controller extends BaseController {
         return $this->db;
     }
 
-    // =========== Overwrites
+    // Override
     public function beforeRequest()
     {
         parent::beforeRequest();
-        $this->data["logout_path"] = $this->getActionUrl("logout");
+
+        if($this->isRedirecting()) return null;
 
 
-        if(isset($this->session["wpdb_settings"])) $this->wpdb_settings = $this->session["wpdb_settings"];
+        if(isset($this->session["wpdb_settings"])) {
+            $this->wpdb_settings = $this->session["wpdb_settings"];
+        }
 
         if($this->isDatabaseConnectionRequired() && !$this->db()->isConnected()) {
             $this->addFlash("error", "Unable to connect to database, please try again.");
             $this->addFlash("warning", $this->db()->getLastError());
             $this->redirectToAction("database");
         }
+
+        $this->data["logout_path"] = $this->getActionUrl("logout");
     }
 
     public function isDatabaseConnectionRequired()

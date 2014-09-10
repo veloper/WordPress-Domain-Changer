@@ -25,13 +25,19 @@ class DatabaseTableRecord {
     return $array;
   }
 
+  public function getAlterationFor($attribute, $find, $replace)
+  {
+    if(empty($find) || mb_stripos($this->attributes[$attribute], $find) !== false) {
+      return new Alteration($this, $attribute, $find, $replace);
+    }
+    return false;
+  }
+
   public function getAlterations($find, $replace)
   {
     $alterations = array();
     foreach($this->getStringishAttributes() as $attribute => $value) {
-      if(mb_stripos($value, $find) !== false) {
-        $alterations[] = new Alteration($this, $attribute, $find, $replace);
-      }
+      if($alteration = $this->getAlterationFor($attribute, $find, $replace)) $alterations[] = $alteration;
     }
     return $alterations;
   }
