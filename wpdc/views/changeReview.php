@@ -2,7 +2,7 @@
 $alterations_exist = (count($results) > 0);
 ?>
 <div class="view_change_review">
-  <form name="change" method="post">
+  <form name="change" method="post" action="<?php echo $form_path; ?>" onSubmit="return confirm('Are you sure?');">
     <div class="col-md-12">
       <div class="panel">
         <div class="heading">
@@ -12,33 +12,43 @@ $alterations_exist = (count($results) > 0);
           <table class="table table-striped table-bordered table-condensed">
             <thead>
               <tr>
+                <th class="checkbox"></th>
                 <th>Table</th>
-                <th>Text-<em>ish</em> Columns</th>
-                <th width="100">Changes</th>
+                <th>Searched Fields</th>
+                <th>SQL Updates</th>
               </tr>
             </head>
             <tbody>
 
-            <?php if($alterations_exist): ?>
-
-              <?php foreach($results as $result): ?>
-                <tr>
-                  <td><code><?php echo $result["table"]->name; ?></code></td>
-                  <td>
-                    <?php foreach($result["table"]->getStringishColumns() as $column): ?>
-                      <span class="label label-default"><code><?php echo $column->name ?></code></span>
-                    <?php endforeach; ?>
-                  </td>
-                  <td align="right"><pre><?php echo count($result["alterations"]) ?></pre></td>
-                </tr>
-              <?php endforeach; ?>
-
-            <?php else: ?>
+            <?php foreach($results as $result): ?>
               <tr>
-                  <td rowspan="3"></td>
-
-
-            <?php endif; ?>
+                <td class="checkbox"><input type="checkbox" name="" value="1" checked /></td>
+                <td><code><?php echo $result["table"]->name; ?></code></td>
+                <td>
+                  <?php foreach($result["table"]->getStringishColumns() as $column): ?>
+                    <span class="label label-default"><code><?php echo $column->name ?></code></span>
+                  <?php endforeach ?>
+                </td>
+                <td align="right"><pre><?php echo count($result["alterations"]) ?></pre></td>
+              </tr>
+              <tr>
+                <td colspan="4">
+                  <div class="sql">
+                    <ol>
+                    <?php foreach($result["alterations"] as $i => $alteration): ?>
+                      <li<?php if($i & 1) echo " class='odd'"?>>
+                        <?php
+                          $output = $this->htmlEncodeSql($alteration->toSql());
+                          if($alteration->isSerialized()) $output = $this->highlight($alteration->replace, $output);
+                          echo $output;
+                        ?>
+                      </li>
+                    <?php endforeach ?>
+                    </ol>
+                  </div>
+                </td>
+              </tr>
+            <?php endforeach; ?>
 
             </tbody>
           </table>
@@ -48,7 +58,7 @@ $alterations_exist = (count($results) > 0);
             </div>
             <div class="col-md-6">
               <?php if($alterations_exist): ?>
-                <button type="submit" class="pull-right btn-primary btn-danger" onclick="return confirm('Are you sure?');">Confirm &amp; Apply Changes &raquo;</button>
+                <button type="submit" class="pull-right btn-primary btn-danger">Confirm &amp; Apply Changes &raquo;</button>
               <?php endif; ?>
             </div>
           </div>

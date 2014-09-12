@@ -27,10 +27,9 @@ class DatabaseTableRecord {
 
   public function getAlterationFor($attribute, $find, $replace)
   {
-    if(empty($find) || mb_stripos($this->attributes[$attribute], $find) !== false) {
-      return new Alteration($this, $attribute, $find, $replace);
-    }
-    return false;
+    $needle   = '/' . preg_quote($find, '/') . '/';
+    $haystack = $this->attributes[$attribute];
+    return preg_match($needle, $haystack) ? new Alteration($this, $attribute, $find, $replace) : false;
   }
 
   public function getAlterations($find, $replace)

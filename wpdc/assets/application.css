@@ -71,6 +71,7 @@ table tbody tr td div.sql ol li {
   list-style-position:inside;
   padding:2px 4px 0 4px;
   overflow:auto;
+  white-space: nowrap;
 }
 
 table tbody tr td div.sql ol li.odd {

@@ -51,9 +51,6 @@ class Database {
     $result = $this->getConnection()->query( $this->getPreparedSql( $query, $tokens ) );
     $rows = array();
     if ( is_object( $result ) && ( $result->num_rows > 0 ) ) while ( $row = $result->fetch_assoc() ) $rows[] = $row;
-    foreach($rows as $key => $value) {
-      foreach($value as $value) if(mb_stripos($str = $value, "????") !== false) die("found in " . $str);
-    }
     return $rows;
   }
 

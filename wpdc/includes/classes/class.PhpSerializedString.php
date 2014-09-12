@@ -26,8 +26,8 @@ class PhpSerializedString {
      * @return string;
      */
     public function replace( $find, $replace ) {
-        while ( mb_stripos( $this->string, $find ) !== false ) {
-            $this->string = $this->replaceFirstOccurance( $find, $replace, $this->string);
+        while ($this->string != ($changed_string = $this->replaceFirstOccurance( $find, $replace, $this->string))) {
+            $this->string = $changed_string;
         }
         return $this;
     }
@@ -96,10 +96,11 @@ class PhpSerializedString {
     }
 
     protected function getCharacters( $string ) {
-        $stop   = mb_strlen( $string );
-        $result = array();
-        for ( $i = 0; $i < $stop; $i++ ) $result[] = mb_substr( $string, $i, 1 );
-        return $result;
+        return preg_split('/(?<!^)(?!$)/u', $string );
+        // $stop   = mb_strlen( $string );
+        // $result = array();
+        // for ( $i = 0; $i < $stop; $i++ ) $result[] = mb_substr( $string, $i, 1 );
+        // return $result;
     }
 
 }

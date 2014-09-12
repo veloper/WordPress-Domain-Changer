@@ -1,5 +1,5 @@
 <?php
-
+set_time_limit(0);
 error_reporting( E_ALL );
 
 define( "WPDC_ROOT_DIR", realpath( dirname( __FILE__ ) . '/../../' ) );

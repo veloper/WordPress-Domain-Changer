@@ -12,6 +12,8 @@ class Alteration {
 
   protected $is_serialized;
 
+  public $elapsed_time;
+
   public function __construct( $record, $attribute, $find, $replace ) {
     $this->record    = $record;
     $this->attribute = $attribute;
@@ -35,11 +37,16 @@ class Alteration {
     return $this->original_value;
   }
 
+  public function isSerialized()
+  {
+    return $this->is_serialized;
+  }
+
   public function getAlteredValue() {
     if ( !$this->altered_value ) {
       $original = $this->getOriginalValue();
 
-      if ( $this->is_serialized ) {
+      if ( $this->isSerialized() ) {
         $string = new PhpSerializedString( $original );
         $this->altered_value = $string->replace( $this->find, $this->replace )->toString();
       } else {
@@ -51,7 +58,7 @@ class Alteration {
 
   public function toSql() {
     $sql = "";
-    if($this->is_serialized) {
+    if($this->isSerialized()) {
       $sql = $this->record->getSaveSql(array($this->attribute => $this->getAlteredValue()));
     } else {
       if(empty($this->find)) {
