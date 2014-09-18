@@ -147,6 +147,32 @@ App.Modules.UX = {
   focusFirstInput: function() { $("input").first().focus(); }
 };
 
+App.Modules.TableSelection = {
+  init:function() {
+    this.list       = $('#selected_tables');
+    this.checkboxes = $('input[type="checkbox"]').filter("[name]");
+    if(this.listExists()) {
+      this.updateList();
+      this._registerEvents();
+    }
+  },
+  _registerEvents: function() {
+    var self = this;
+    this.checkboxes.on("change", function(){ self.updateList(); });
+  },
+  listExists:function() { return this.list.size() > 0; },
+  updateList:function() {
+    var list = this.list.html("");
+    var checkboxes = this.checkboxes.filter(":checked");
+    checkboxes.each(function(){
+      $("<li></li>").text($(this).attr("name").replace("table_", "")).appendTo(list);
+    });
+    if(checkboxes.size() <= 0) {
+      $("<center><em>Choose from the <strong>Available Tables</strong> listing.</em></h3>").css("color","gray").appendTo(list);
+    }
+  }
+};
+
 // Init App
 window.onload = function() { App.init(); };
 

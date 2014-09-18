@@ -5,6 +5,7 @@ class Database {
   protected $credentials = null;
 
   protected $connection = null;
+  protected $is_connected = false;
   protected $last_error = null;
 
   public function __construct( $host, $user, $password, $database ) {
@@ -54,6 +55,25 @@ class Database {
     return $rows;
   }
 
+  public function multiQuery($queries = array())
+  {
+    $details = array();
+
+    foreach($queries as $i => $query) {
+      $result = $this->getConnection()->query($query);
+      $details[$i] = array(
+        'query'         => $query,
+        'result'        => $result,
+        'error'         => null,
+        'affected_rows' => $this->getConnection()->affected_rows
+      );
+      if( $error = $this->getConnection()->error ) {
+        $details[$i]["error"] = $this->last_error = "MySQL Error: $error | Query (" . ($i + 1) . "/" . count($queries) . "): '{$queries[$i]}'";
+      }
+    }
+    return $details;
+  }
+
   public function getPreparedSql( $query, $tokens = array() ) {
     if ( substr_count( $query, "?" ) != count( $tokens ) ) throw new Exception( "Database->getPreparedSql(): Token count missmatch." );
     $query = str_replace('?', '[________?________]', $query);
@@ -74,19 +94,16 @@ class Database {
     return $replacement;
   }
 
-  public function isConnected() {
-    return $this->getLastError() ? false : true;
+  public function isConnectable() {
+    return ($this->getConnection() !== false);
   }
 
   public function getLastError() {
-    if ( $this->last_error ) {
-      return "Failed to connect to MySQL: " . $this->last_error;
-    }
-    return null;
+    return $this->last_error;
   }
 
   public function getConnection() {
-    if(empty($this->connection)) {
+    if(!$this->connection) {
       if ( function_exists( "mysqli_report" ) ) mysqli_report( MYSQLI_REPORT_STRICT );
       try {
         $this->connection = new mysqli(
@@ -96,10 +113,17 @@ class Database {
           $this->credentials->database,
           $this->credentials->port
         );
-        if ( mysqli_connect_error() ) throw Exception( mysqli_connect_errno() . " - " . mysqli_connect_error() );
+        // Connection Test
+        if ( mysqli_connect_errno() ) {
+          throw Exception( "(#" . mysqli_connect_errno() . ") " . mysqli_connect_error() );
+        } else {
+          $this->is_connected = true;
+        }
 
+        // Charset
         $this->connection->set_charset("utf8");
         if ( $this->connection->error ) throw Exception( "Error loading character set utf8: {$mysqli->error}" );
+
       } catch ( Exception $e ) {
         $this->last_error = $e->getMessage();
         $this->connection = false;
@@ -109,7 +133,7 @@ class Database {
   }
 
   public function escape( $value ) {
-    return $this->connection->escape_string( $value );
+    return $this->getConnection()->escape_string( $value );
   }
 
 

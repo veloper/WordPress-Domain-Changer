@@ -49,7 +49,7 @@
 
           <div class="row">
             <div class="col-md-12">
-              <button class="pull-right btn-primary" type="submit" id="submit" name="submit">Next &raquo;</button>
+              <button class="pull-right btn-primary" type="submit" id="submit" name="submit">Save &amp; Next &raquo;</button>
             </div>
           </div>
       </form>

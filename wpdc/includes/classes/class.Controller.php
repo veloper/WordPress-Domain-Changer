@@ -17,20 +17,25 @@ class Controller extends BaseController {
     $this->addRoute( "GET"  , "login"           , "login"          , array( "root" => true ) );
     $this->addRoute( "POST" , "login/submit"    , "loginSubmit" );
     $this->addRoute( "GET"  , "logout"          , "logout" );
+
     $this->addRoute( "GET"  , "database"        , "database"       , array( "auth" => true ) );
     $this->addRoute( "POST" , "database/submit" , "databaseSubmit" , array( "auth" => true ) );
-    $this->addRoute( "GET"  , "change/setup"    , "changeSetup"    , array( "auth" => true, "db" => true ) );
-    $this->addRoute( "POST" , "change/review"   , "changeReview"   , array( "auth" => true, "db" => true ) );
-    $this->addRoute( "POST" , "change/apply"    , "changeApply"    , array( "auth" => true, "db" => true ) );
-    $this->addRoute( "GET"  , "change/success"  , "changeSuccess"  , array( "auth" => true, "db" => true ) );
-    $this->addRoute( "GET"  , "change/failure"  , "changeFailure"  , array( "auth" => true, "db" => true ) );
+
+    $this->addRoute( "GET"  , "tables"          , "tables"         , array( "auth" => true, "db" => true ) );
+    $this->addRoute( "POST" , "tables/submit"   , "tablesSubmit"   , array( "auth" => true, "db" => true ) );
+
+    $this->addRoute( "GET"  , "change/setup"    , "changeSetup"    , array( "auth" => true, "db" => true, "tables" => true ) );
+    $this->addRoute( "POST" , "change/review"   , "changeReview"   , array( "auth" => true, "db" => true, "tables" => true ) );
+    $this->addRoute( "POST" , "change/apply"    , "changeApply"    , array( "auth" => true, "db" => true, "tables" => true ) );
+    $this->addRoute( "GET"  , "change/success"  , "changeSuccess"  , array( "auth" => true, "db" => true, "tables" => true ) );
+    $this->addRoute( "GET"  , "change/failure"  , "changeFailure"  , array( "auth" => true, "db" => true, "tables" => true ) );
   }
 
   // == Actions
 
   public function login() {
     $this->data["form_path"] = $this->getActionUrl( "loginSubmit" );
-    $this->data["disabled"]  = ( $this->isPasswordValid() == false );
+    $this->data["disabled"]  = ( $this->isPasswordValid() == false );  // TODO: better naming for isPasswordValid
 
     return $this->render( "login" );
   }
@@ -92,7 +97,12 @@ class Controller extends BaseController {
       "table_prefix" => $post["table_prefix"]
     );
 
-    if ( !$this->db()->isConnected() ) {
+    if(empty($this->session["wpdb_settings"]) || $this->wpdb_settings != $this->session["wpdb_settings"]) {
+      $this->session["wpdb_settings"] = $this->wpdb_settings;
+      $this->setSelectedTableNames(array());
+    }
+
+    if ( !$this->db()->isConnectable() ) {
       $this->addFlash( "error", "Database Error: Unable to connect using the settings provided." );
       return $this->redirectToAction( "database" );
     }
@@ -103,7 +113,37 @@ class Controller extends BaseController {
     }
 
     $this->session["wpdb_settings"] = $this->wpdb_settings;
-    $this->addFlash( "success", "Database connection was successful!" );
+    $this->addFlash( "success", "Database connection successful!" );
+
+    return $this->redirectToAction( "tables" );
+  }
+
+  public function tables() {
+    $this->data["form_path"] = $this->getActionUrl( "tablesSubmit" );
+    $this->data["table_prefix"] = $this->wpdb_settings["table_prefix"];
+    $this->data["tables"] = $this->db()->getValidTables();
+    $this->data["selected_table_names"] = $this->getSelectedTableNames();
+
+    return $this->render("tables");
+  }
+
+
+  public function tablesSubmit() {
+    $post = $this->getPost();
+
+    // Selected Tables
+    $valid_tables = $this->db()->getValidTables();
+    $selected_tables = array();
+    foreach ( array_keys( $post ) as $key ) {
+      $table_name = str_replace( "table_", "", $key );
+      if ( isset( $valid_tables[$table_name] ) ) $selected_tables[$table_name] = $valid_tables[$table_name];
+    }
+
+    $this->setSelectedTableNames(array_keys($selected_tables));
+
+    if(!empty($selected_tables)) {
+      $this->addFlash("success", "Table selections updated successully!");
+    }
 
     return $this->redirectToAction( "changeSetup" );
   }
@@ -126,7 +166,7 @@ class Controller extends BaseController {
 
     $this->data["form_path"] = $this->getActionUrl( "changeReview" );
     $this->data["table_prefix"] = $this->wpdb_settings["table_prefix"];
-    $this->data["tables"] = $this->db()->getValidTables();
+    $this->data["tables"] = $this->getSelectedTables();
 
     return $this->render( "changeSetup" );
   }
@@ -134,27 +174,18 @@ class Controller extends BaseController {
   public function changeReview() {
     $post = $this->getPost();
 
-    // Selected Tables
-    $valid_tables = $this->db()->getValidTables();
-    $selected_tables = array();
-    foreach ( array_keys( $post ) as $key ) {
-      $table_name = str_replace( "table_", "", $key );
-      if ( isset( $valid_tables[$table_name] ) ) $selected_tables[$table_name] = $valid_tables[$table_name];
-    }
-
     // Alterations
     $find    = $post["old_url"];
     $replace = $post["new_url"];
-    $results = $this->_getAlterationsForTables( $selected_tables, $find, $replace );
+    $results = $this->getAlterationsForTables( $this->getSelectedTables(), $find, $replace );
 
     // Session
-    $this->session["selected_table_names"] = array_keys( $selected_tables );
     $this->session["find"]    = $find;
     $this->session["replace"] = $replace;
 
     // View
-    $this->data["results"] = $results;
-    $this->data["back_path"] = $this->getActionUrl( "change" );
+    $this->data["find"]      = $find;
+    $this->data["results"]   = $results;
     $this->data["form_path"] = $this->getActionUrl( "changeApply" );
 
     return $this->render( "changeReview" );
@@ -173,24 +204,27 @@ class Controller extends BaseController {
     // Alterations
     $find    = $this->session["find"];
     $replace = $this->session["replace"];
-    $tables_and_alterations = $this->_getAlterationsForTables( $selected_tables, $find, $replace );
+    $tables_and_alterations = $this->getAlterationsForTables( $selected_tables, $find, $replace );
 
     // Queries
     $queries = array();
-    foreach($tables_and_alterations as $table_alterations) foreach($table_alterations['alterations'] as $alteration) $queries[] = $alteration->toSql();
+    foreach ( $tables_and_alterations as $table_alterations )
+      foreach ( $table_alterations['alterations'] as $alteration )
+        $queries[] = $alteration->toSql();
 
-    $multi_query = implode(";", $queries) . ";";
-
-
-    TODO MULTI QUERY HERE
+    $query_to_result = $this->db()->multiQuery($queries);
 
     // View
-    $this->data["queries"] = $queries;
+    $this->data["query_to_result"] = $query_to_result;
 
     return $this->render( "changeApply" );
   }
 
-  public function _getAlterationsForTables( array $tables, $find, $replace ) {
+
+
+  // =========== Helpers
+
+  public function getAlterationsForTables( array $tables, $find, $replace ) {
     $results = array();
     foreach ( $tables as $table ) {
       $array = array(
@@ -198,11 +232,11 @@ class Controller extends BaseController {
         "alterations" => $table->getAlterations( $find, $replace )
       );
 
-      if (preg_match('/options/', $table->name )) {
+      if ( preg_match( '/options/', $table->name ) ) {
         foreach ( $table->getRecordsWhere( "option_name = ?", array( "upload_path" ) ) as $record ) {
           $old_upload = $record->attributes["option_value"];
           $new_upload = dirname( WP_ROOT_DIR ) . '/wp-content/uploads';
-          if ( $alteration = $record->getAlterationFor( "option_value", $old_upload, $new_upload ) ) {
+          if ( $old_upload != $new_upload && $alteration = $record->getAlterationFor( "option_value", $old_upload, $new_upload ) ) {
             $array["alterations"][] = $alteration;
           }
         }
@@ -218,15 +252,19 @@ class Controller extends BaseController {
     return $results;
   }
 
-
-  public function changeSubmit() {
-    // code...
+  public function getSelectedTables() {
+    $selected = array();
+    $valid    = $this->db()->getValidTables();
+    foreach ( $this->getSelectedTableNames() as $name ) if ( isset( $valid[$name] ) ) $tables[$name] = $valid[$name];
+    return $tables;
   }
 
-  // =========== Helpers
+  public function getSelectedTableNames() {
+    return isset($this->session["selected_table_names"]) ? $this->session["selected_table_names"] : array();
+  }
 
-  public function getDatabaseChanges( $tables ) {
-
+  public function setSelectedTableNames(array $table_names) {
+    $this->session["selected_table_names"] = $table_names;
   }
 
   public function getWpConfigFile() {
@@ -234,7 +272,7 @@ class Controller extends BaseController {
   }
 
   public function db() {
-    if ( $this->db === null || !$this->db->isConnected() ) {
+    if ( ($this->db instanceof WordPressDatabase) === false ) {
       $this->db = new WordPressDatabase(
         $this->wpdb_settings["host"],
         $this->wpdb_settings["user"],
@@ -252,23 +290,55 @@ class Controller extends BaseController {
 
     if ( $this->isRedirecting() ) return null;
 
-
     if ( isset( $this->session["wpdb_settings"] ) ) {
       $this->wpdb_settings = $this->session["wpdb_settings"];
     }
 
-    if ( $this->isDatabaseConnectionRequired() && !$this->db()->isConnected() ) {
+    if ( $this->isDatabaseConnectionRequired() && !$this->db()->isConnectable() ) {
       $this->addFlash( "error", "Unable to connect to database, please try again." );
       $this->addFlash( "warning", $this->db()->getLastError() );
       $this->redirectToAction( "database" );
     }
 
+    if ( $this->isTableSelectionsRequired() && empty($this->getSelectedTableNames()) ) {
+      $this->addFlash( "error", "At least one table must be selected." );
+      $this->redirectToAction( "tables" );
+    }
+
+  }
+
+  public function beforeRender()
+  {
+    parent::beforeRender();
+
     $this->data["logout_path"] = $this->getActionUrl( "logout" );
+
+    $this->data["nav"] = array(
+      "database" => array(
+        "path"     => $this->getActionUrl( "database" ),
+        "disabled" => false,
+        "valid" => $this->db()->isConnectable()
+      ),
+      "tables" => array(
+        "path"     => $this->getActionUrl( "tables" ),
+        "disabled" => !$this->db()->isConnectable(),
+        "count"    => count($this->getSelectedTableNames())
+      ),
+      "change" => array(
+        "path"     => $this->getActionUrl( "changeSetup" ),
+        "disabled" => empty($this->getSelectedTableNames())
+      )
+    );
   }
 
   public function isDatabaseConnectionRequired() {
     $options = $this->getRequestRoute()["options"];
     return isset( $options["db"] ) ? (bool) $options["db"] : false;
+  }
+
+  public function isTableSelectionsRequired() {
+    $options = $this->getRequestRoute()["options"];
+    return isset( $options["tables"] ) ? (bool) $options["tables"] : false;
   }
 
 

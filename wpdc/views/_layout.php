@@ -35,6 +35,34 @@
       </div>
     </div>
 
+    <?php if($request->authenticated) : ?>
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+
+            <div id="nav">
+              <a class="btn-primary btn-default" href="<?php echo $nav['database']['path']; ?>">
+                1. Database Connection (<?php echo $this->indicator($nav['database']['valid']) ?>)
+              </a>
+
+              <div class="next"></div>
+
+              <a class="btn-primary btn-default <?php if($nav['tables']['disabled']) echo 'disabled' ?>" href="<?php echo $nav['tables']['path']; ?>">
+                2. Table Selections<?php if(!$nav['tables']['disabled']) echo " ({$nav['tables']['count']})"; ?>
+              </a>
+
+              <div class="next"></div>
+
+              <a class="btn-primary btn-default <?php if($nav['change']['disabled']) echo 'disabled' ?>" href="<?php echo $nav['change']['path']; ?>">
+                3. Find &amp; Replace
+              </a>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    <?php endif; ?>
+
     <div id="main">
 
       <div class="container">

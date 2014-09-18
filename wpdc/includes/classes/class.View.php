@@ -24,6 +24,11 @@ class View {
         return $encodedSql;
     }
 
+    public function indicator($bool)
+    {
+        return $bool ? '<span class="success">&#10004;</span>' : '<span class="danger">&#10008;</span>';
+    }
+
     public function highlight($needle, $haystack)
     {
         return str_ireplace($needle, "<span class='highlight'>$needle</span>", $haystack);

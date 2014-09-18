@@ -126,20 +126,23 @@ class BaseController {
         }
 
         if ( $this->isRequestProtected() ) {
-            if($this->isAuthenticated()) {
+            if ( $this->isAuthenticated() ) {
                 $this->renewAuthCookie();
-            } else  {
+            } else {
                 $this->addFlash( "error", "Your session has expired, please login again." );
                 return $this->redirectToAction( "login" );
             }
         }
+    }
+
+    public function beforeRender() {
 
     }
 
 
     public function afterRequest() {
         if ( !$this->isRedirecting() )  $this->clearFlash();
-        if ( $this->getRequestVerb() == "POST") $this->setLastPostTo($this->getRequestAction(), $this->getPost());
+        if ( $this->getRequestVerb() == "POST" ) $this->setLastPostTo( $this->getRequestAction(), $this->getPost() );
         $this->saveSession();
         $this->stopUsingCustomErrorHandler();
     }
@@ -160,6 +163,8 @@ class BaseController {
 
 
     public function render( $view_name ) {
+        $this->beforeRender();
+
         $layout = new View( realpath( dirname( __FILE__ ) . "/../../views/_layout.php" ) );
         $view   = new View( realpath( dirname( __FILE__ ) . "/../../views/" . $view_name . ".php" ) );
 
@@ -276,16 +281,14 @@ class BaseController {
         return $this->getCookieData( "auth" );
     }
 
-    public function getLastPostTo($action)
-    {
+    public function getLastPostTo( $action ) {
         return $this->cookieExists( "last_post_to_" . $action ) ? $this->getCookieData( "last_post_to_" . $action ) : false;
     }
 
-    public function setLastPostTo($action, $post)
-    {
+    public function setLastPostTo( $action, $post ) {
         $post   = $post   ? $post   : $this->getPost();
         $action = $action ? $action : $this->getRequestAction();
-        $this->setCookieData("last_post_to_" . $action, $post, 5 );
+        $this->setCookieData( "last_post_to_" . $action, $post, 5 );
     }
 
     // Cookie Helpers
@@ -307,7 +310,7 @@ class BaseController {
     }
 
     public function unsetCookie( $key ) {
-        setcookie( "wpdc_" . $key, "", time() - 3600, '/');
+        setcookie( "wpdc_" . $key, "", time() - 3600, '/' );
     }
 
     public function getPost( $just_value_for_key = null ) {
@@ -365,8 +368,7 @@ class BaseController {
         return $this->getRouteWhere( array( "path" => $this->getRequestPath() ) );
     }
 
-    public function getRequestAction()
-    {
+    public function getRequestAction() {
         return $this->getRequestRoute()["action"];
     }
 
