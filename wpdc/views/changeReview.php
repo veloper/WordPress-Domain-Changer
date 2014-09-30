@@ -1,7 +1,4 @@
-<?php
-$alterations_exist = (count($results) > 0);
-?>
-<div class="view_change_review">
+<div class="row view_change_review">
   <form name="change" method="post" action="<?php echo $form_path; ?>" onSubmit="return confirm('Are you sure?');">
     <div class="col-md-12">
       <div class="panel">
@@ -9,12 +6,12 @@ $alterations_exist = (count($results) > 0);
           <h2 class="title engrave">Review &amp; Confirm Changes</h2>
         </div>
         <div class="body">
-          <table class="table table-striped table-bordered table-condensed">
+          <table class="table table-bordered table-condensed">
             <thead>
               <tr>
                 <th>Table</th>
                 <th>Searched Fields</th>
-                <th>Queries</th>
+                <th width="100">Queries</th>
               </tr>
             </head>
             <tbody>
@@ -27,10 +24,10 @@ $alterations_exist = (count($results) > 0);
                     <span class="label label-info"><code><?php echo $column->name ?></code></span>
                   <?php endforeach ?>
                 </td>
-                <td align="right"><?php echo count($result["alterations"]) ?></td>
+                <td align="right"><a href="javascript:void(0)" onClick="$(this).parents('tr').next().find('td').toggle()" title="Show/Hide Queries"><?php echo count($result["alterations"]) ?></a></td>
               </tr>
               <tr>
-                <td colspan="3">
+                <td colspan="3" style="display:none">
                   <div class="sql">
                     <ol>
                     <?php foreach($result["alterations"] as $i => $alteration): ?>
@@ -51,9 +48,7 @@ $alterations_exist = (count($results) > 0);
           </table>
           <div class="row">
             <div class="col-md-12">
-              <?php if($alterations_exist): ?>
-                <button type="submit" class="pull-right btn-primary btn-danger">Confirm &amp; Apply Changes &raquo;</button>
-              <?php endif; ?>
+              <button type="submit" class="pull-right btn-primary btn-danger">Confirm &amp; Apply Changes &raquo;</button>
             </div>
           </div>
         </div>

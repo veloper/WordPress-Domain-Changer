@@ -105,9 +105,9 @@ App.Modules.Flash = {
   init: function() {
     this._setInitialOpacities();
     this._startMonitorFlashMessages();
-    this._registerEvents();
+    this.registerEvents();
   },
-  _registerEvents: function() {
+  registerEvents: function() {
     var self = this;
     this.flashEl().on("click", '.dismiss', function(){
       self.hideMessage($(this).hide().parents(".message"));
@@ -120,7 +120,7 @@ App.Modules.Flash = {
       messages = $(".success", self.flashEl());
       if(messages.size() > 0) self.hideMessage(messages);
     };
-    setTimeout(callback, 3500);
+    setTimeout(callback, 4000);
   },
   flashEl:              function() { return $("#flash"); },
   messageEls:           function() { return $(".message", this.flashEl()); },
@@ -141,24 +141,26 @@ App.Modules.Flash = {
 };
 
 App.Modules.UX = {
-  init: function() {
-    this.focusFirstInput();
-  },
+  init: function() {  this.focusFirstInput();  },
   focusFirstInput: function() { $("input").first().focus(); }
 };
 
 App.Modules.TableSelection = {
   init:function() {
     this.list       = $('#selected_tables');
-    this.checkboxes = $('input[type="checkbox"]').filter("[name]");
+    this.checkboxes = $('tbody input[type="checkbox"]');
+    this.allOrNoneCheckbox = $('thead input[type="checkbox"]');
     if(this.listExists()) {
       this.updateList();
-      this._registerEvents();
+      this.registerEvents();
     }
   },
-  _registerEvents: function() {
+  registerEvents: function() {
     var self = this;
     this.checkboxes.on("change", function(){ self.updateList(); });
+    this.allOrNoneCheckbox.on("change", function(){
+      self.checkboxes.prop("checked", $(this).prop("checked")).trigger("change");
+    });
   },
   listExists:function() { return this.list.size() > 0; },
   updateList:function() {
@@ -170,6 +172,30 @@ App.Modules.TableSelection = {
     if(checkboxes.size() <= 0) {
       $("<center><em>Choose from the <strong>Available Tables</strong> listing.</em></h3>").css("color","gray").appendTo(list);
     }
+  }
+};
+
+App.Modules.Disqus = {
+  shortname: "dandoezemacom",
+  url: "http://dan.doezema.com/2010/04/wordpress-domain-change/",
+  category_id: 3291575, // "Use Verified"
+
+  init:function() {
+    this.registerEvents();
+  },
+  registerEvents: function() {
+    $('#disqus_thread').on("click", "a.load", this.embed);
+  },
+  setConfigVariables: function() {
+    window.disqus_url         = this.url;
+    window.disqus_shortname   = this.shortname;
+    window.disqus_category_id = this.category_id;
+  },
+  embed:function() {
+    App.Modules.Disqus.setConfigVariables();
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
   }
 };
 

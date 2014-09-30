@@ -1,4 +1,4 @@
-<div class="view_change_review">
+<div class="row view_change_submit">
   <form name="change" method="post" action="" onSubmit="return confirm('Are you sure?');">
     <div class="col-md-12">
       <div class="panel">

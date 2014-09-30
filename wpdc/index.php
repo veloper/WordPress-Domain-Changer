@@ -2,7 +2,7 @@
 /**
  * Author: Daniel Doezema
  * Author URI: http://dan.doezema.com
- * Version: 0.1.0
+ * Version: 0.2.0
  * Description: This script was developed to help ease migration of WordPress sites from one domain to another.
  *
  * Copyright (c) 2014, Daniel Doezema
@@ -36,7 +36,7 @@
  */
 
 /* == Boostrap App == */
-require 'includes/bootstrap.php';
+require dirname( __FILE__ ) . '/includes/bootstrap.php';
 
 /* == Init Controller == */
 $controller = new Controller();

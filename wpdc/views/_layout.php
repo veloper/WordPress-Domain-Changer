@@ -81,9 +81,7 @@
           </div>
         <?php endif; ?>
 
-        <div class="row">
-          <?php echo $body; ?>
-        </div>
+        <?php echo $body; ?>
       </div>
 
     </div>

@@ -1,17 +1,11 @@
 <?php
 class Controller extends BaseController {
 
-  private $wpdb_settings = array(
-    "host"         => "localhost",
-    "user"         => null,
-    "password"     => null,
-    "database"     => null,
-    "table_prefix" => null
-  );
+  private $db   = null;
+  private $wpdb = array( "host" => "localhost", "user" => null, "password" => null, "database" => null, "table_prefix" => null );
 
-  private $db = null;
 
-  // == Routes
+  // == Routes ==============================================================
 
   public function routes() {
     $this->addRoute( "GET"  , "login"           , "login"          , array( "root" => true ) );
@@ -26,12 +20,12 @@ class Controller extends BaseController {
 
     $this->addRoute( "GET"  , "change/setup"    , "changeSetup"    , array( "auth" => true, "db" => true, "tables" => true ) );
     $this->addRoute( "POST" , "change/review"   , "changeReview"   , array( "auth" => true, "db" => true, "tables" => true ) );
-    $this->addRoute( "POST" , "change/apply"    , "changeApply"    , array( "auth" => true, "db" => true, "tables" => true ) );
-    $this->addRoute( "GET"  , "change/success"  , "changeSuccess"  , array( "auth" => true, "db" => true, "tables" => true ) );
-    $this->addRoute( "GET"  , "change/failure"  , "changeFailure"  , array( "auth" => true, "db" => true, "tables" => true ) );
+    $this->addRoute( "POST" , "change/submit"   , "changeSubmit"   , array( "auth" => true, "db" => true, "tables" => true ) );
+
+    $this->addRoute( "GET"  , "success"         , "success"        , array( "auth" => true, "db" => true, "tables" => true ) );
   }
 
-  // == Actions
+  // == Actions ==============================================================
 
   public function login() {
     $this->data["form_path"] = $this->getActionUrl( "loginSubmit" );
@@ -58,7 +52,7 @@ class Controller extends BaseController {
   }
 
   public function database() {
-    $config = PhpFile::create( 'tests/support/wp-config.php' );
+    $config = PhpFile::readFromRelativePath( 'tests/support/wp-config.php' );
 
     $this->data["fields"] = array(
       array( "name" => "host"         , "label" => "Hostname"      , "value" => $config->getConstant( "DB_HOST" )      , "req" => true ),
@@ -89,7 +83,7 @@ class Controller extends BaseController {
   public function databaseSubmit() {
     $post = $this->getPost();
 
-    $this->wpdb_settings = array(
+    $this->wpdb = array(
       "host"         => $post["host"],
       "user"         => $post["user"],
       "password"     => $post["password"],
@@ -97,9 +91,9 @@ class Controller extends BaseController {
       "table_prefix" => $post["table_prefix"]
     );
 
-    if(empty($this->session["wpdb_settings"]) || $this->wpdb_settings != $this->session["wpdb_settings"]) {
-      $this->session["wpdb_settings"] = $this->wpdb_settings;
-      $this->setSelectedTableNames(array());
+    if ( empty( $this->session["wpdb"] ) || $this->wpdb != $this->session["wpdb"] ) {
+      $this->session["wpdb"] = $this->wpdb;
+      $this->setSelectedTableNames( array() );
     }
 
     if ( !$this->db()->isConnectable() ) {
@@ -112,7 +106,7 @@ class Controller extends BaseController {
       return $this->redirectToAction( "database" );
     }
 
-    $this->session["wpdb_settings"] = $this->wpdb_settings;
+    $this->session["wpdb"] = $this->wpdb;
     $this->addFlash( "success", "Database connection successful!" );
 
     return $this->redirectToAction( "tables" );
@@ -120,13 +114,12 @@ class Controller extends BaseController {
 
   public function tables() {
     $this->data["form_path"] = $this->getActionUrl( "tablesSubmit" );
-    $this->data["table_prefix"] = $this->wpdb_settings["table_prefix"];
+    $this->data["table_prefix"] = $this->wpdb["table_prefix"];
     $this->data["tables"] = $this->db()->getValidTables();
     $this->data["selected_table_names"] = $this->getSelectedTableNames();
 
-    return $this->render("tables");
+    return $this->render( "tables" );
   }
-
 
   public function tablesSubmit() {
     $post = $this->getPost();
@@ -139,10 +132,10 @@ class Controller extends BaseController {
       if ( isset( $valid_tables[$table_name] ) ) $selected_tables[$table_name] = $valid_tables[$table_name];
     }
 
-    $this->setSelectedTableNames(array_keys($selected_tables));
+    $this->setSelectedTableNames( array_keys( $selected_tables ) );
 
-    if(!empty($selected_tables)) {
-      $this->addFlash("success", "Table selections updated successully!");
+    if ( !empty( $selected_tables ) ) {
+      $this->addFlash( "success", "Table selections updated successully!" );
     }
 
     return $this->redirectToAction( "changeSetup" );
@@ -165,7 +158,7 @@ class Controller extends BaseController {
     }
 
     $this->data["form_path"] = $this->getActionUrl( "changeReview" );
-    $this->data["table_prefix"] = $this->wpdb_settings["table_prefix"];
+    $this->data["table_prefix"] = $this->wpdb["table_prefix"];
     $this->data["tables"] = $this->getSelectedTables();
 
     return $this->render( "changeSetup" );
@@ -186,20 +179,16 @@ class Controller extends BaseController {
     // View
     $this->data["find"]      = $find;
     $this->data["results"]   = $results;
-    $this->data["form_path"] = $this->getActionUrl( "changeApply" );
+    $this->data["form_path"] = $this->getActionUrl( "changeSubmit" );
 
     return $this->render( "changeReview" );
   }
 
-  public function changeApply() {
+  public function changeSubmit() {
     $post = $this->getPost();
 
     // Selected Tables
-    $selected_tables = array();
-    $valid_tables = $this->db()->getValidTables();
-    foreach ( $this->session["selected_table_names"] as $table_name ) {
-      if ( isset( $valid_tables[$table_name] ) ) $selected_tables[$table_name] = $valid_tables[$table_name];
-    }
+    $selected_tables = $this->getSelectedTables();
 
     // Alterations
     $find    = $this->session["find"];
@@ -212,19 +201,34 @@ class Controller extends BaseController {
       foreach ( $table_alterations['alterations'] as $alteration )
         $queries[] = $alteration->toSql();
 
-    $query_to_result = $this->db()->multiQuery($queries);
+      // Execute
+      $results = $this->db()->multiQuery( $queries );
 
-    // View
-    $this->data["query_to_result"] = $query_to_result;
+    // Errors ?
+    $errors = array();
+    foreach ( $results as $result ) if ( $result["error"] ) $errors[] = $result["error"];
+      if ( count( $errors ) > 0 ) {
+        foreach ( $errors as $msg ) {
+          $this->addFlash( "error", $msg );
+        }
+        return $this->redirectToAction( "changeSetup" );
+      }
 
-    return $this->render( "changeApply" );
+    return $this->redirectToAction( "success" );
   }
 
+  public function success() {
+    $this->addFlash( "success", "All database queries executed successully!" );
 
+    $this->data["find"]    = $this->session["find"];
+    $this->data["replace"] = $this->session["replace"];
 
-  // =========== Helpers
+    return $this->render( "success" );
+  }
 
-  public function getAlterationsForTables( array $tables, $find, $replace ) {
+  // == Helpers ==============================================================
+
+  private function getAlterationsForTables( array $tables, $find, $replace ) {
     $results = array();
     foreach ( $tables as $table ) {
       $array = array(
@@ -252,33 +256,33 @@ class Controller extends BaseController {
     return $results;
   }
 
-  public function getSelectedTables() {
+  private function getSelectedTables() {
     $selected = array();
     $valid    = $this->db()->getValidTables();
     foreach ( $this->getSelectedTableNames() as $name ) if ( isset( $valid[$name] ) ) $tables[$name] = $valid[$name];
-    return $tables;
+      return $tables;
   }
 
-  public function getSelectedTableNames() {
-    return isset($this->session["selected_table_names"]) ? $this->session["selected_table_names"] : array();
+  private function getSelectedTableNames() {
+    return isset( $this->session["selected_table_names"] ) ? $this->session["selected_table_names"] : array();
   }
 
-  public function setSelectedTableNames(array $table_names) {
+  private function setSelectedTableNames( array $table_names ) {
     $this->session["selected_table_names"] = $table_names;
   }
 
-  public function getWpConfigFile() {
+  private function getWpConfigFile() {
     return $config = PhpFile::create( 'wp-config.php' );
   }
 
-  public function db() {
-    if ( ($this->db instanceof WordPressDatabase) === false ) {
+  private function db() {
+    if ( ( $this->db instanceof WordPressDatabase ) === false ) {
       $this->db = new WordPressDatabase(
-        $this->wpdb_settings["host"],
-        $this->wpdb_settings["user"],
-        $this->wpdb_settings["password"],
-        $this->wpdb_settings["database"],
-        $this->wpdb_settings["table_prefix"]
+        $this->wpdb["host"],
+        $this->wpdb["user"],
+        $this->wpdb["password"],
+        $this->wpdb["database"],
+        $this->wpdb["table_prefix"]
       );
     }
     return $this->db;
@@ -290,9 +294,7 @@ class Controller extends BaseController {
 
     if ( $this->isRedirecting() ) return null;
 
-    if ( isset( $this->session["wpdb_settings"] ) ) {
-      $this->wpdb_settings = $this->session["wpdb_settings"];
-    }
+    if ( isset( $this->session["wpdb"] ) ) $this->wpdb = $this->session["wpdb"];
 
     if ( $this->isDatabaseConnectionRequired() && !$this->db()->isConnectable() ) {
       $this->addFlash( "error", "Unable to connect to database, please try again." );
@@ -300,15 +302,15 @@ class Controller extends BaseController {
       $this->redirectToAction( "database" );
     }
 
-    if ( $this->isTableSelectionsRequired() && empty($this->getSelectedTableNames()) ) {
+    if ( $this->isTableSelectionsRequired() && empty( $this->getSelectedTableNames() ) ) {
       $this->addFlash( "error", "At least one table must be selected." );
       $this->redirectToAction( "tables" );
     }
 
   }
 
-  public function beforeRender()
-  {
+  // Override
+  public function beforeRender() {
     parent::beforeRender();
 
     $this->data["logout_path"] = $this->getActionUrl( "logout" );
@@ -322,11 +324,11 @@ class Controller extends BaseController {
       "tables" => array(
         "path"     => $this->getActionUrl( "tables" ),
         "disabled" => !$this->db()->isConnectable(),
-        "count"    => count($this->getSelectedTableNames())
+        "count"    => count( $this->getSelectedTableNames() )
       ),
       "change" => array(
         "path"     => $this->getActionUrl( "changeSetup" ),
-        "disabled" => empty($this->getSelectedTableNames())
+        "disabled" => empty( $this->getSelectedTableNames() )
       )
     );
   }
@@ -340,8 +342,5 @@ class Controller extends BaseController {
     $options = $this->getRequestRoute()["options"];
     return isset( $options["tables"] ) ? (bool) $options["tables"] : false;
   }
-
-
-
 
 }

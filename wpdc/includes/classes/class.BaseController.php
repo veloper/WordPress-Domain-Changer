@@ -8,7 +8,7 @@ class BaseController {
         500 => '500 Internal Server Error'
     );
 
-    public $session_ttl = 600; // 10 minutes
+    public $session_ttl = WPDC_SESSION_TTL;
 
     public $data    = array(); // The data that will be passed to the view
     public $session = array();
@@ -86,14 +86,11 @@ class BaseController {
             }
         }
 
-
         // Output Headers
         foreach ( $this->getResponseHeaders() as $value ) header( $value );
 
         // Output Body (unless we're redirecting)
-        if ( !$this->isRedirecting() ) {
-            echo $this->_body;
-        }
+        if ( !$this->isRedirecting() ) echo $this->_body;
 
         die;
     }
@@ -136,7 +133,7 @@ class BaseController {
     }
 
     public function beforeRender() {
-
+        // Override if needed
     }
 
 
@@ -146,8 +143,6 @@ class BaseController {
         $this->saveSession();
         $this->stopUsingCustomErrorHandler();
     }
-
-
 
     public function isPasswordConstantDefined() {
         return defined( "WPDC_PASSWORD" );
@@ -160,7 +155,6 @@ class BaseController {
     public function isRequestProtected() {
         return $this->getRequestRoute()["auth"];
     }
-
 
     public function render( $view_name ) {
         $this->beforeRender();
@@ -187,19 +181,14 @@ class BaseController {
             "post"             => $this->getPost()
         );
 
-
         $this->data["flash"]   = $this->getFlash();
-
         $this->data["body"]    = $view->render( $this->data );
-
         $this->data["flash"]   = $this->getFlash(); // catch any flash messages added from view (usually an error)
 
         $html = $layout->render( $this->data );
 
         return $html;
     }
-
-
 
     public function redirectToAction( $action ) {
         $route = $this->getRouteWhere( array( "action" => $action ) );
@@ -237,7 +226,6 @@ class BaseController {
         );
     }
 
-
     public function unsetSessionCookie() {
         $this->unsetCookie( "session" );
     }
@@ -260,7 +248,6 @@ class BaseController {
     public function getSession() {
         $this->session;
     }
-
 
     public function unsetAuthCookie() {
         $this->unsetCookie( "auth" );
@@ -290,8 +277,6 @@ class BaseController {
         $action = $action ? $action : $this->getRequestAction();
         $this->setCookieData( "last_post_to_" . $action, $post, 5 );
     }
-
-    // Cookie Helpers
 
     public function setCookieData( $key, $data, $ttl = null ) {
         $ttl                = $ttl ? $ttl : ( 60 * 5 );

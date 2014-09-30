@@ -1,5 +1,5 @@
-<div class="view_change">
-  <form name="change" method="POST" action="<?php echo $form_path; ?>">
+<div class="row view_tables">
+  <form name="change" method="post" action="<?php echo $form_path; ?>">
     <div class="col-md-7">
       <div class="panel">
         <div class="heading">
@@ -10,7 +10,7 @@
             <table class="table table-striped table-bordered table-condensed">
               <thead>
                 <tr>
-                  <th class="checkbox"></th>
+                  <th class="checkbox"><input type="checkbox" name="__all_or_none__" value="1" /></th>
                   <th width="100" style="text-align:center">Prefix</th>
                   <th style="text-align:center">Name</th>
                   <th width="100">Rows</th>
