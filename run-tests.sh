@@ -14,11 +14,14 @@ cd "$WPDC_PATH/tests/phpunit"
 phpunit --configuration ./phpunit.xml
 
 PHPUNIT_EXIT_CODE=$?
+echo "PHPUnit Exit Code: $PHPUNIT_EXIT_CODE"
 
 echo "Running RSpec/Capybara suite..."
 cd "$WPDC_PATH/tests/rspec"
 bundle install
-rspec spec --format='nested' --color
+bundle exec rspec spec --format='nested' --color
+
 RSPEC_EXIT_CODE=$?
+echo "RSpec Exit Code: $PHPUNIT_EXIT_CODE"
 
 exit $[$PHPUNIT_EXIT_CODE + $RSPEC_EXIT_CODE];
