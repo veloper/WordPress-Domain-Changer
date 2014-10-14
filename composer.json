@@ -1,7 +1,6 @@
 {
     "require-dev": {
-        "phpunit/phpunit": "4.1.*",
-        "wp-cli/wp-cli": "*"
+        "phpunit/phpunit": "4.1.*"
     },
     "autoload": {
         "psr-0": {

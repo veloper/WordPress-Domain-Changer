@@ -1,5 +1,6 @@
 <?php
-require_once 'wpdc/classes/class.SerializedString.php';
+require_once '../unit_helper.php';
+require_once CLASSES_PATH . '/class.SerializedString.php';
 
 class SerializedStringTest extends PHPUnit_Framework_TestCase
 {

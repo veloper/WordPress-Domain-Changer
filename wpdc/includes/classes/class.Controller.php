@@ -52,7 +52,7 @@ class Controller extends BaseController {
   }
 
   public function database() {
-    $config = PhpFile::readFromRelativePath( 'tests/support/wp-config.php' );
+    $config = PhpFile::readFromRelativePath( 'wp-config.php' );
 
     $this->data["fields"] = array(
       array( "name" => "host"         , "label" => "Hostname"      , "value" => $config->getConstant( "DB_HOST" )      , "req" => true ),
@@ -143,7 +143,7 @@ class Controller extends BaseController {
 
   public function changeSetup() {
     $suggested_old_url = (string) str_replace( array( 'http://', 'https://' ), '', $siteurl = $this->db()->getOption( "siteurl" ) );
-    $suggested_new_url = (string) str_replace( array( 'http://', 'https://' ), '', $this->getBaseUrl() );
+    $suggested_new_url = (string) str_replace( array( 'http://', 'https://', '/wpdc' ), '', $this->getBaseUrl() );
 
     $this->data["fields"] = array(
       array( "name" => "old_url" , "label" => "Old URL"  , "value" => $suggested_old_url , "req" => true ),

@@ -1,5 +1,6 @@
 <?php
-require_once 'wpdc/classes/class.BaseController.php';
+require_once '../unit_helper.php';
+require_once CLASSES_PATH . '/class.BaseController.php';
 
 class BaseControllerTest extends PHPUnit_Framework_TestCase
 {

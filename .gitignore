@@ -1,6 +1,7 @@
-*/dummy/wordpress
-*/dummy/wpdc
-*/wordpress_archives
+
+tests/rspec/spec/support/dummy/wpdc/*
+tests/rspec/spec/support/dummy/wordpress/*
+tests/rspec/spec/support/wordpress_archives/*
 vendor/*
 
 *.pid

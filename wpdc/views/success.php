@@ -11,7 +11,7 @@
           <li>
             Remove this script from the server when you're done on this page.
             <ul>
-              <li><strong>Path:</strong> <code class="inline"><nobr><?php echo WPDC_ROOT_DIR ?></nobr></code></li>
+              <li><strong>Path:</strong> <?php echo WPDC_ROOT_DIR ?></li>
             </ul>
           </li>
         </ul>

@@ -13,7 +13,8 @@ class WordPressDatabase extends Database {
         foreach ( $this->getTables() as $name => $table ) {
             if ( stripos( $name, $this->table_prefix ) === false ) continue;
             if ( $table->getRowCount() <= 0 ) continue;
-            if ( empty( $table->getStringishColumns() ) ) continue;
+            $stringish_columns = $table->getStringishColumns();
+            if ( empty( $stringish_columns) ) continue;
             $tables[$name] = $table;
         }
         return $tables;
