@@ -17,7 +17,8 @@ PHPUNIT_EXIT_CODE=$?
 
 echo "Running RSpec/Capybara suite..."
 cd "$WPDC_PATH/tests/rspec"
-rspec spec
+bundle install
+rspec spec --format='nested' --color
 RSPEC_EXIT_CODE=$?
 
 exit $[$PHPUNIT_EXIT_CODE + $RSPEC_EXIT_CODE];

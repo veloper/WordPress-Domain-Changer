@@ -61,8 +61,8 @@ RSpec.configure do |config|
     Capybara.default_selector       = :css
     Capybara.default_wait_time      = 1
     Capybara.ignore_hidden_elements = false
-    Capybara.default_driver         = :mechanize
-    Capybara.javascript_driver      = :mechanize
+    Capybara.default_driver         = :selenium
+    Capybara.javascript_driver      = :selenium
   end
 
   config.include Capybara::DSL
