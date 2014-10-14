@@ -1,5 +1,5 @@
 <?php
-require_once '../unit_helper.php';
+require_once dirname(__FILE__) . '/../unit_helper.php';
 require_once CLASSES_PATH . '/class.PhpFile.php';
 
 class PhpFileTest extends PHPUnit_Framework_TestCase
@@ -20,17 +20,17 @@ class PhpFileTest extends PHPUnit_Framework_TestCase
 
   public function testGetVariable()
   {
-    $this->assertEquals("test_wp_", $this->file->getVariable("table_prefix"));
+    $this->assertEquals("wordpress_test_", $this->file->getVariable("table_prefix"));
   }
 
   public function testGetConstant()
   {
     $array = array(
-      'DB_NAME'     => 'test_db_name',
-      'DB_USER'     => 'test_db_user',
-      'DB_PASSWORD' => 'test_db_pass',
-      'DB_HOST'     => 'test_db_host',
-      'DB_CHARSET'  => 'test_db_utf8'
+      'DB_NAME'     => 'wordpress_test',
+      'DB_USER'     => 'wordpress_test',
+      'DB_PASSWORD' => 'wordpress_test',
+      'DB_HOST'     => 'localhost:8889',
+      'DB_CHARSET'  => 'db_utf8'
     );
     foreach($array as $key => $value) {
         $this->assertEquals($value, $this->file->getConstant($key));

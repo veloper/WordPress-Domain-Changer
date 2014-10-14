@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -l
 PATH=~/.composer/vendor/bin:$PATH
 
 if [ ! -f ~/.composer/vendor/bin/phpunit ]; then
@@ -15,11 +15,9 @@ phpunit --configuration ./phpunit.xml
 
 PHPUNIT_EXIT_CODE=$?
 
-# echo "Running PHPUnit suite..."
-# cd "$WPDC_PATH/tests/rspec"
-# rspec spec
-
+echo "Running RSpec/Capybara suite..."
+cd "$WPDC_PATH/tests/rspec"
+rspec spec
 RSPEC_EXIT_CODE=$?
 
-
-exit if [  ]
+exit $[$PHPUNIT_EXIT_CODE + $RSPEC_EXIT_CODE];

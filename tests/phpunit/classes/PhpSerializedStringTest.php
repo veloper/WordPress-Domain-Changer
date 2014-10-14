@@ -1,8 +1,8 @@
 <?php
-require_once '../unit_helper.php';
-require_once CLASSES_PATH . '/class.SerializedString.php';
+require_once dirname(__FILE__) . '/../unit_helper.php';
+require_once CLASSES_PATH . '/class.PhpSerializedString.php';
 
-class SerializedStringTest extends PHPUnit_Framework_TestCase
+class PhpSerializedStringTest extends PHPUnit_Framework_TestCase
 {
     public function testReplaceMethod()
     {
@@ -37,7 +37,7 @@ class SerializedStringTest extends PHPUnit_Framework_TestCase
             );
 
 
-            $modified = new SerializedString($original);
+            $modified = new PhpSerializedString($original);
             $modified->replace($find, $replace);
 
             $this->assertEquals(unserialize($modified->toString()), unserialize($expected));

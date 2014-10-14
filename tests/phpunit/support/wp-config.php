@@ -54,7 +54,7 @@ define('NONCE_KEY', 'put your unique phrase here');
  * You can have multiple installations in one database if you give each a unique
  * prefix. Only numbers, letters, and underscores please!
  */
-$table_prefix  = 'wp_2_3_2_';
+$table_prefix  = 'wordpress_test_';
 
 /**
  * WordPress Localized Language, defaults to English.
