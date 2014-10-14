@@ -6,7 +6,7 @@ before_install:
 install:
   - sudo apt-get update -qq
   - sudo apt-get install python-software-properties
-  - sudo add-apt-repository ppa:ondrej/php5
+  - sudo echo -ne '\n' | add-apt-repository ppa:ondrej/php5;
   - sudo apt-get update -qq
   - sudo apt-get install mysql-server mysql-client php5
 env:
