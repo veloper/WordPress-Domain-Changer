@@ -3,8 +3,8 @@ PATH=~/.composer/vendor/bin:$PATH
 
 if [ ! -f ~/.composer/vendor/bin/phpunit ]; then
   echo "Running composer installation..."
-  composer global install
-  composer global require 'phpunit/phpunit=4.1.*'
+  php composer.phar global install
+  php composer global require 'phpunit/phpunit=4.1.*'
 fi
 
 WPDC_PATH=`pwd`
