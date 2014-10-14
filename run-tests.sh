@@ -19,7 +19,8 @@ echo "PHPUnit Exit Code: $PHPUNIT_EXIT_CODE"
 echo "Running RSpec/Capybara suite..."
 cd "$WPDC_PATH/tests/rspec"
 bundle install
-bundle exec rspec spec --format='nested' --color
+bundle config build.nokogiri --use-system-libraries
+bundle exec rspec ./spec/feature/* --format='nested' --color
 
 RSPEC_EXIT_CODE=$?
 echo "RSpec Exit Code: $PHPUNIT_EXIT_CODE"
