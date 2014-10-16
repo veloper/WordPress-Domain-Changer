@@ -2,6 +2,8 @@
 tests/rspec/spec/support/dummy/wpdc/*
 tests/rspec/spec/support/dummy/wordpress/*
 tests/rspec/spec/support/wordpress_archives/*
+tests/rspec/vendor/bundle/*
+tests/rspec/.bundle/*
 vendor/*
 
 *.pid

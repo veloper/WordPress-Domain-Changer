@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'ostruct'
 
 WordPressUtil.archives.each do |wp_archive_path|
   meta = {

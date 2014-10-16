@@ -1,14 +1,14 @@
 require "capybara/rspec"
 require "capybara/mechanize"
 require "childprocess"
-require "fileutils"
-require "shellwords"
 require "pry"
 
+require "fileutils"
+require "shellwords"
+require 'ostruct'
 require 'open-uri'
 require 'pathname'
 require 'thread'
-
 
 ROOT_PATH              = File.expand_path("../../../../", __FILE__)
 WPDC_PATH              = File.join(ROOT_PATH, "wpdc")
