@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../spec_helper.rb'
 
 WordPressUtil.archives.each do |wp_archive_path|
   meta = {
@@ -74,7 +74,7 @@ WordPressUtil.archives.each do |wp_archive_path|
 
       click_button(page.body["Continue to"] ? 'Continue' : 'Install')
 
-      expect(page.current_url).to match /step=2/
+      expect(page.current_url).to match(/step=2/)
     end
 
     scenario "WordPress site loads under OLD domain" do

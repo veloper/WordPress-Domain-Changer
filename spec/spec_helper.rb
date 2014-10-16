@@ -9,10 +9,9 @@ require 'open-uri'
 require 'pathname'
 require 'thread'
 
-ROOT_PATH              = File.expand_path("../../../../", __FILE__)
+ROOT_PATH              = File.expand_path("../../", __FILE__)
 WPDC_PATH              = File.join(ROOT_PATH, "wpdc")
-RSPEC_PATH             = File.join(ROOT_PATH, "tests", "rspec")
-SPEC_PATH              = File.join(RSPEC_PATH, "spec")
+SPEC_PATH              = File.join(ROOT_PATH, "spec")
 SUPPORT_PATH           = File.join(SPEC_PATH, "support")
 DUMMY_PATH             = File.join(SUPPORT_PATH, "dummy")
 DUMMY_WPDC_PATH        = File.join(DUMMY_PATH, "wpdc")

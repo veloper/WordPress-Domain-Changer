@@ -6,18 +6,15 @@ if [ ! -f ~/.composer/vendor/bin/phpunit ]; then
   php composer.phar global require 'phpunit/phpunit=4.1.*'
 fi
 
-WPDC_PATH=`pwd`
-
 echo "Running PHPUnit suite..."
-phpunit --configuration $WPDC_PATH/tests/phpunit/phpunit.xml
+phpunit --configuration phpunit.xml
 
 PHPUNIT_EXIT_CODE=$?
 echo "PHPUnit Exit Code: $PHPUNIT_EXIT_CODE"
 
 echo "Running RSpec/Capybara suite..."
-cd "$WPDC_PATH/tests/rspec"
 bundle install
-rspec $WPDC_PATH/tests/rspec/spec/features
+bundle exec rspec spec -fd
 
 RSPEC_EXIT_CODE=$?
 echo "RSpec Exit Code: $PHPUNIT_EXIT_CODE"
