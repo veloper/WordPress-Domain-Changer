@@ -1,3 +1,7 @@
+#!/bin/bash -l
+
+source ~/.bashrc
+
 PATH=~/.composer/vendor/bin:$PATH
 
 if [ ! -f ~/.composer/vendor/bin/phpunit ]; then
@@ -14,7 +18,7 @@ echo "PHPUnit Exit Code: $PHPUNIT_EXIT_CODE"
 
 echo "Running RSpec/Capybara suite..."
 bundle install
-bundle exec rspec spec -fd
+bundle exec ruby -S rspec spec/features/wordpress_versions_spec.rb
 
 RSPEC_EXIT_CODE=$?
 echo "RSpec Exit Code: $PHPUNIT_EXIT_CODE"
