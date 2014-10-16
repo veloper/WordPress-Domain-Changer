@@ -1,7 +1,6 @@
 require "capybara/rspec"
 require "capybara/mechanize"
 require "childprocess"
-require "pry"
 
 require "fileutils"
 require "shellwords"

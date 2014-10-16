@@ -12,4 +12,4 @@ install:
   - sudo curl -sS https://getcomposer.org/installer | php
 env:
   - MYSQL_HOST=127.0.0.1 MYSQL_PORT=3306 MYSQL_USER=root
-script: "./run-tests.sh"
+script: "/bin/bash -l ./run-tests.sh"

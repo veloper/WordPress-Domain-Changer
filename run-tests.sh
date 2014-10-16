@@ -1,4 +1,3 @@
-#!/bin/bash -l
 PATH=~/.composer/vendor/bin:$PATH
 
 if [ ! -f ~/.composer/vendor/bin/phpunit ]; then
@@ -16,10 +15,9 @@ PHPUNIT_EXIT_CODE=$?
 echo "PHPUnit Exit Code: $PHPUNIT_EXIT_CODE"
 
 echo "Running RSpec/Capybara suite..."
-cd $WPDC_PATH/tests/rspec
-
-bundle install --path $WPDC_PATH/tests/rspec/vendor/bundle
-./bin/rspec spec --format nested --color
+cd "$WPDC_PATH/tests/rspec"
+bundle install
+rspec $WPDC_PATH/tests/rspec/spec/features
 
 RSPEC_EXIT_CODE=$?
 echo "RSpec Exit Code: $PHPUNIT_EXIT_CODE"
