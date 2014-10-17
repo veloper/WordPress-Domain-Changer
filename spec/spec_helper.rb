@@ -9,7 +9,7 @@ require 'open-uri'
 require 'pathname'
 require 'thread'
 
-require 'support/word_press_util'
+require File.expand_path '../support/word_press_util.rb', __FILE__
 
 ROOT_PATH              = File.expand_path("../../", __FILE__)
 WPDC_PATH              = File.join(ROOT_PATH, "wpdc")
