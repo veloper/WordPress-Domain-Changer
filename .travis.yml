@@ -12,7 +12,6 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install curl mysql-server mysql-client php5
   - sudo curl -sS https://getcomposer.org/installer | php
-before_script:
-  - bundle install
+  - sudo ./install-deps.sh
 script:
   - ./run-tests.sh
