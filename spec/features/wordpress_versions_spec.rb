@@ -1,5 +1,7 @@
 require_relative '../spec_helper.rb'
 
+puts "test on travis!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+
 WordPressUtil.archives.each do |wp_archive_path|
   meta = {
     :wp => {
