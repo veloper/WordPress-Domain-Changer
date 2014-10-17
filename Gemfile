@@ -1,6 +1,7 @@
 source 'https://rubygems.org'
 
-gem 'rspec', '~> 2.14.0'
+gem 'rake'
+gem 'rspec'
 gem 'capybara'
 gem 'capybara-mechanize'
 gem "capybara-webkit"

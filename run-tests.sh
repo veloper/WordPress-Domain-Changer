@@ -17,8 +17,9 @@ PHPUNIT_EXIT_CODE=$?
 echo "PHPUnit Exit Code: $PHPUNIT_EXIT_CODE"
 
 echo "Running RSpec/Capybara suite..."
+echo `pwd`
 bundle install
-bundle exec ruby -S rspec spec/features/wordpress_versions_spec.rb
+bundle exec rake
 
 RSPEC_EXIT_CODE=$?
 echo "RSpec Exit Code: $PHPUNIT_EXIT_CODE"
