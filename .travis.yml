@@ -11,7 +11,5 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install curl mysql-server mysql-client php5
   - sudo curl -sS https://getcomposer.org/installer | php
-  - ./install-deps.sh
-before_script:
-  - mysql -e 'CREATE DATABASE travis_test;'
+install: ./install-deps.sh
 script: ./run-tests.sh

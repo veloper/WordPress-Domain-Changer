@@ -28,19 +28,26 @@ WordPressUtil.archives.each do |wp_archive_path|
 
   describe "Change Domain of WordPress #{meta[:wp][:version]}", meta do
 
-    let(:wp) { |e| OpenStruct.new e.metadata[:wp] }
-    let(:db)  { |e| OpenStruct.new e.metadata[:db] }
-    let(:wpdc)  { |e| OpenStruct.new e.metadata[:wpdc] }
+    let(:wp)   { |e| OpenStruct.new e.metadata[:wp] }
+    let(:db)   { |e| OpenStruct.new e.metadata[:db] }
+    let(:wpdc) { |e| OpenStruct.new e.metadata[:wpdc] }
 
-    it "Drops & creates WordPress database" do
-      system "mysql --host='#{db.host}' --port=#{db.port} --user='#{db.user}' -e 'DROP DATABASE IF EXISTS #{db.name}; CREATE DATABASE #{db.name};'"
+    it "Drops WordPress database" do
+      output = `mysql --host #{db.host} --port #{db.port} --user #{db.user} -e "DROP DATABASE IF EXISTS #{db.name};"`
+      expect($?).to be_success
+    end
+
+    it "Creates WordPress database" do
+      output = `mysql --host #{db.host} --port #{db.port} --user #{db.user} -e "CREATE DATABASE #{db.name};"`
+      expect($?).to be_success
     end
 
     it "Unzip WordPress archive" do
       if wp.install_path.exist?
         wp.install_path.rmtree
       end
-      system "unzip -o #{wp.archive_path} -d #{DUMMY_PATH}"
+      `unzip -o #{wp.archive_path} -d #{DUMMY_PATH}`
+      expect($?).to be_success
     end
 
     it "Start PHP web server for OLD domain" do
