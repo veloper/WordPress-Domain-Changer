@@ -1,5 +1,6 @@
 language: ruby
-rvm: 1.9.3
+rvm: 2.1.2
+gemfile: Gemfile
 env: DB=mysql MYSQL_HOST="127.0.0.1" MYSQL_PORT="3306" MYSQL_USER="root"
 before_install:
   - "export DISPLAY=:99.0"
@@ -10,7 +11,7 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install curl mysql-server mysql-client php5
   - sudo curl -sS https://getcomposer.org/installer | php
-  - sudo ./install-deps.sh
+  - ./install-deps.sh
 before_script:
   - mysql -e 'CREATE DATABASE travis_test;'
 script: ./run-tests.sh

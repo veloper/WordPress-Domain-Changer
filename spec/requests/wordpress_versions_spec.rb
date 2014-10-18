@@ -33,7 +33,7 @@ WordPressUtil.archives.each do |wp_archive_path|
     let(:wpdc)  { |e| OpenStruct.new e.metadata[:wpdc] }
 
     it "Drops & creates WordPress database" do
-      system("mysql --host='#{db.host}' --port=#{db.port} --user='#{db.user}' -e 'DROP DATABASE IF EXISTS #{db.name}; CREATE DATABASE #{db.name};'"
+      system "mysql --host='#{db.host}' --port=#{db.port} --user='#{db.user}' -e 'DROP DATABASE IF EXISTS #{db.name}; CREATE DATABASE #{db.name};'"
     end
 
     it "Unzip WordPress archive" do
