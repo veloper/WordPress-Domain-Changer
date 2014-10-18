@@ -9,7 +9,7 @@ PHPUNIT_EXIT_CODE=$?
 echo "PHPUnit Exit Code: $PHPUNIT_EXIT_CODE"
 
 echo "Running RSpec/Capybara suite..."
-bundle exec rake
+bundle exec rspec spec -fd --color
 
 RSPEC_EXIT_CODE=$?
 echo "RSpec Exit Code: $PHPUNIT_EXIT_CODE"

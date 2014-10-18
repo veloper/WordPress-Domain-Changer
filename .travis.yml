@@ -1,8 +1,6 @@
 language: ruby
-rvm:
-  - 1.9.3
-env:
-  - MYSQL_HOST=127.0.0.1 MYSQL_PORT=3306 MYSQL_USER=root
+rvm: 1.9.3
+env: DB=mysql MYSQL_HOST="127.0.0.1" MYSQL_PORT="3306" MYSQL_USER="root"
 before_install:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
@@ -13,5 +11,6 @@ before_install:
   - sudo apt-get install curl mysql-server mysql-client php5
   - sudo curl -sS https://getcomposer.org/installer | php
   - sudo ./install-deps.sh
-script:
-  - ./run-tests.sh
+before_script:
+  - mysql -e 'CREATE DATABASE travis_test;'
+script: ./run-tests.sh

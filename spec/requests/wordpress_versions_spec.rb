@@ -33,14 +33,14 @@ WordPressUtil.archives.each do |wp_archive_path|
     let(:wpdc)  { |e| OpenStruct.new e.metadata[:wpdc] }
 
     it "Drops & creates WordPress database" do
-      `mysql --host="#{db.host}" --port=#{db.port} --user="#{db.user}" -e "DROP DATABASE IF EXISTS #{db.name}; CREATE DATABASE #{db.name};"`
+      system("mysql --host='#{db.host}' --port=#{db.port} --user='#{db.user}' -e 'DROP DATABASE IF EXISTS #{db.name}; CREATE DATABASE #{db.name};'"
     end
 
     it "Unzip WordPress archive" do
       if wp.install_path.exist?
         wp.install_path.rmtree
       end
-      `unzip -o #{wp.archive_path} -d #{DUMMY_PATH}`
+      system "unzip -o #{wp.archive_path} -d #{DUMMY_PATH}"
     end
 
     it "Start PHP web server for OLD domain" do
