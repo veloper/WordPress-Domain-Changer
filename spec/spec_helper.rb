@@ -28,7 +28,8 @@ MYSQL = {
 $child_procs = []
 
 def php_web_server(host_and_port, document_root)
-  process = ChildProcess.build("php", "-c", "php.ini", "-d", "error_reporting=0", "-d", "display_errors=0", "-S", host_and_port, "-t", document_root)
+  process = ChildProcess.build("php", "-c", "php.ini", "-d", "error_reporting=0", "-d", "display_errors=0", "-S", host_and_port.to_s, "-t", document_root.to_s)
+  process.io.inherit!
   process.cwd = document_root
   process.start
   $child_procs << process
