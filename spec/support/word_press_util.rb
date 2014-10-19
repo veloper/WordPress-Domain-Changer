@@ -21,7 +21,7 @@ class WordPressUtil
   end
 
   def self.archives
-    archives_path.children
+    archives_path.children.sort_by{|x| iversion(x.basename.to_s[/-([0-9\.]+?).zip/, 1]) }
   end
 
   def self.iversion(version)
