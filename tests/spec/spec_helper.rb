@@ -9,11 +9,12 @@ require 'open-uri'
 require 'pathname'
 require 'thread'
 
-require File.expand_path '../support/word_press_util.rb', __FILE__
+require File.expand_path('../support/word_press_util.rb', __FILE__)
 
-ROOT_PATH              = File.expand_path("../../", __FILE__)
+ROOT_PATH              = File.expand_path("../../../", __FILE__)
 WPDC_PATH              = File.join(ROOT_PATH, "wpdc")
-SPEC_PATH              = File.join(ROOT_PATH, "spec")
+TESTS_PATH             = File.join(ROOT_PATH, "tests")
+SPEC_PATH              = File.join(TESTS_PATH, "spec")
 SUPPORT_PATH           = File.join(SPEC_PATH, "support")
 DUMMY_PATH             = File.join(SUPPORT_PATH, "dummy")
 DUMMY_WPDC_PATH        = File.join(DUMMY_PATH, "wpdc")

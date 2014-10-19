@@ -11,6 +11,5 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install curl php5 php5-cli php5-mysql
   - sudo curl -sS https://getcomposer.org/installer | php
-  - php -v
-install: ./install-deps.sh
-script: ./run-tests.sh
+install: "cd ./tests && ./install.sh"
+script: "cd ./tests && ./run.sh"

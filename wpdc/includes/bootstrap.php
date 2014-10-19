@@ -27,4 +27,5 @@ require_once dirname( __FILE__ ) . '/classes/class.Alteration.php';
 
 require_once dirname( __FILE__ ) . '/classes/class.View.php';
 require_once dirname( __FILE__ ) . '/classes/class.BaseController.php';
-require_once dirname( __FILE__ ) . '/classes/class.Controller.php';
+
+require_once dirname( __FILE__ ) . '/../controllers/controller.php';

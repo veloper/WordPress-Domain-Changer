@@ -32,12 +32,12 @@ WordPressUtil.archives.each do |wp_archive_path|
     let(:db)   { |e| OpenStruct.new e.metadata[:db] }
     let(:wpdc) { |e| OpenStruct.new e.metadata[:wpdc] }
 
-    it "Drops WordPress database" do
+    it "Drop WordPress database" do
       output = `mysql --host #{db.host} --port #{db.port} --user #{db.user} -e "DROP DATABASE IF EXISTS #{db.name};"`
       expect($?).to be_success
     end
 
-    it "Creates WordPress database" do
+    it "Create WordPress database" do
       output = `mysql --host #{db.host} --port #{db.port} --user #{db.user} -e "CREATE DATABASE #{db.name};"`
       expect($?).to be_success
     end
@@ -50,12 +50,12 @@ WordPressUtil.archives.each do |wp_archive_path|
       expect($?).to be_success
     end
 
-    it "Start PHP web server for OLD domain" do
+    it "Start a PHP web server for the OLD domain" do
       php_web_server(wpdc.old_domain, wp.install_path.to_path)
       Capybara.app_host = "http://" + wpdc.old_domain
     end
 
-    it "Configure Wordpress" do
+    it "Run through WordPress configuration setup script" do
       visit "/wp-admin/setup-config.php?step=1"
       fill_in "dbname", :with => db.name
       fill_in "uname",  :with => db.user
@@ -66,7 +66,7 @@ WordPressUtil.archives.each do |wp_archive_path|
       expect(page).to have_content "sparky"
     end
 
-    it "Install WordPress" do
+    it "Run through WordPress installation script" do
       visit '/wp-admin/install.php?step=1'
       fill_in 'weblog_title', :with => wp.title
       fill_in 'admin_email', :with => wp.email
@@ -84,23 +84,23 @@ WordPressUtil.archives.each do |wp_archive_path|
       expect(page.current_url).to match(/step=2/)
     end
 
-    it "WordPress site loads under OLD domain" do
+    it "Ensure WordPress site can be reach at OLD domain" do
       visit '/'
       expect(page.current_url).to match wpdc.old_domain
       expect(page).to have_content wp.title
     end
 
-    it "WordPress site only references OLD domain" do
+    it "Ensure WordPress site only references the OLD domain" do
       visit '/'
       expect(page.body.scan(wpdc.new_domain).length).to be <= 0
       expect(page.body.scan(wpdc.old_domain).length).to be > 0
     end
 
-    it "Install WPDC" do
+    it "Install WordPress-Domain-Changer into the root directory of the WordPress site" do
       FileUtils.cp_r(wpdc.dummy_path, wp.install_path)
     end
 
-    it "Change WordPress URL with WPDC" do
+    it "Change the URL of the WordPress site using WordPress-Domain-Changer" do
 
       # Login
       visit '/wpdc/index.php'
@@ -137,19 +137,19 @@ WordPressUtil.archives.each do |wp_archive_path|
       expect(page).to have_content "All database queries executed successully!"
     end
 
-    it "Start PHP web server for NEW domain" do
+    it "Start a different PHP web server for the NEW domain" do
       php_web_server(wpdc.new_domain, wp.install_path.to_path)
       Capybara.app_host = "http://" + wpdc.new_domain
     end
 
 
-    it "WordPress site loads under NEW domain" do
+    it "Ensure the WordPress site can be reached at the NEW domain" do
       visit '/'
       expect(page.current_url).to match wpdc.new_domain
       expect(page).to have_content wp.title
     end
 
-    it "WordPress site only references NEW domain" do
+    it "Ensure the WordPress site only references the NEW domain" do
       visit '/'
       expect(page.body.scan(wpdc.old_domain).length).to be <= 0
       expect(page.body.scan(wpdc.new_domain).length).to be > 0

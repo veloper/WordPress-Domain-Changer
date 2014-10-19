@@ -1,8 +1,7 @@
-
-spec/support/dummy/wpdc/*
-spec/support/dummy/wordpress/*
-spec/support/wordpress_archives/*
-vendor/*
+tests/spec/support/dummy/wpdc/*
+tests/spec/support/dummy/wordpress/*
+tests/spec/support/wordpress_archives/*
+tests/vendor/*
 
 *.pid
 *.err
