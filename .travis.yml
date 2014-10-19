@@ -10,6 +10,7 @@ before_install:
   - sudo echo | sudo add-apt-repository ppa:ondrej/php5;
   - sudo apt-get update -qq
   - sudo apt-get install curl php5 php5-cli php5-mysql
-  - sudo curl -sS https://getcomposer.org/installer | php
-install: "cd ./tests && ./install.sh"
-script: "cd ./tests && ./run.sh"
+  - cd ./tests
+  - sudo curl -sS https://getcomposer.org/installer | php"
+install: ./install.sh
+script: ./run.sh
