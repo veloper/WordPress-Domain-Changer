@@ -1,4 +1,4 @@
-# WordPress Domain Changer
+# WordPress Domain Changer [![Build Status](https://travis-ci.org/veloper/WordPress-Domain-Changer.svg?branch=master)](https://travis-ci.org/veloper/WordPress-Domain-Changer)
 
 A stand-alone tool that helps ease the migration of WordPress sites from one domain/URL to another.
 
