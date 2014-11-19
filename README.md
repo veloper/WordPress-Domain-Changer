@@ -1,6 +1,6 @@
 # WordPress Domain Changer
 
-A stand-alone tool that helps ease that migration of WordPress sites from one domain/URL to another.
+A stand-alone tool that helps ease the migration of WordPress sites from one domain/URL to another.
 
 ## Instructions
 
