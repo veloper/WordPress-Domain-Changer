@@ -36,7 +36,8 @@ class Database {
   }
 
   public function getTableRecords( $query, $tokens = array() ) {
-    $table = $this->getTables()[$this->getTableNameFromSql( $query )];
+    $tables  = $this->getTables();
+    $table   = $tables[$this->getTableNameFromSql( $query )];
     $records = array();
     foreach ( $this->query( $query, $tokens ) as $row ) $records[] = new DatabaseTableRecord( $this, $table, $row );
     return $records;
