@@ -2,7 +2,6 @@
 /**
  * Author: Daniel Doezema
  * Author URI: http://dan.doezema.com
- * Version: 0.2.0
  * Description: A script that helps ease migration of WordPress sites from one domain to another.
  *
  * Copyright (c) 2014, Daniel Doezema

@@ -1,6 +1,11 @@
 # Change Log
 
-## 2.0.0 - November 19th
+## 2.0.1 - December 11th, 2014
+
+* Updated README.md to fix blog post link and grammar.
+* Fixed issue #16 - Syntax error caused by using brackets on a method call. (e.g., `$obj->method()["key"];`)
+
+## 2.0.0 - November 19th, 2014
 
 This release features a complete overhaul and rewrite of WordPress Domain Changer.
 
@@ -27,7 +32,7 @@ This release features a complete overhaul and rewrite of WordPress Domain Change
 * Updated `README.md` instructions
 * Updated version to 2.0.0
 
-## 0.2.0 - August 7th
+## 0.2.0 - August 7th, 2014
 
 * Added basic `Controller` and `View` classes
 * Fixed path related issues that were reported in the 0.1.0 release
@@ -41,6 +46,6 @@ This release features a complete overhaul and rewrite of WordPress Domain Change
     * Testing Instructions
     * Grammar
 
-## 0.1.0 - August 7th
+## 0.1.0 - August 7th, 2014
 
 * Started `CHANGELOG.md` file.
