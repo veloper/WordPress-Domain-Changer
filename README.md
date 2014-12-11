@@ -23,13 +23,11 @@ A stand-alone tool that helps ease the migration of WordPress sites from one dom
 
 ## Website
 
-[Blog Post & Overview](http://dan.doezema.com/2014/11/wordpress-domain-changer-version-2.0/)
+[Blog Post & Overview](http://dan.doezema.com/2014/11/wordpress-domain-changer-2.0/)
 
 ## License
 
-Wordpress Domain Changer is released under the New BSD license.
-
-http://dan.doezema.com/licenses/new-bsd/
+WordPress Domain Changer is released under the [New BSD license](http://dan.doezema.com/licenses/new-bsd/).
 
 ## Author
 
