@@ -44,7 +44,8 @@ class DatabaseTable {
     );
 
     $meta = array();
-    $row = $this->database->query( "SHOW TABLE STATUS WHERE Name=?", array( $this->name ) )[0];
+    $rows = $this->database->query( "SHOW TABLE STATUS WHERE Name=?", array( $this->name ) );
+    $row = $rows[0];
 
     foreach ( $mapping as $record_key => $mapped_key ) $meta[$mapped_key] = $row[$record_key];
     return (object) $meta;
