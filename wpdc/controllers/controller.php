@@ -334,12 +334,14 @@ class Controller extends BaseController {
   }
 
   public function isDatabaseConnectionRequired() {
-    $options = $this->getRequestRoute()["options"];
+  	$route = $this->getRequestRoute();
+    $options = $route["options"];
     return isset( $options["db"] ) ? (bool) $options["db"] : false;
   }
 
   public function isTableSelectionsRequired() {
-    $options = $this->getRequestRoute()["options"];
+  	$route = $this->getRequestRoute();
+    $options = $route["options"];
     return isset( $options["tables"] ) ? (bool) $options["tables"] : false;
   }
 
