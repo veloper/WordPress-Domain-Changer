@@ -153,7 +153,8 @@ class BaseController {
     }
 
     public function isRequestProtected() {
-        return $this->getRequestRoute()["auth"];
+    	$route = $this->getRequestRoute();
+        return $route["auth"];
     }
 
     public function render( $view_name ) {
@@ -354,7 +355,8 @@ class BaseController {
     }
 
     public function getRequestAction() {
-        return $this->getRequestRoute()["action"];
+    	$route = $this->getRequestRoute();
+        return $route["action"];
     }
 
     public function getRequestPath() {
@@ -367,7 +369,8 @@ class BaseController {
 
     public function getBaseUrl() {
         if ( stripos( $this->getRequestUrl(), ".php" ) !== false ) {
-            return dirname( explode( ".php", $this->getRequestUrl() )[0] );
+        	$url_array = explode( ".php", $this->getRequestUrl() );
+            return dirname( $url_array[0] );
         } else {
             return $this->getRequestUrl();
         }
