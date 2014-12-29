@@ -38,3 +38,4 @@ WordPress Domain Changer is released under the [New BSD license](http://dan.doez
 * [Kevin deLeon](http://www.kevin-deleon.com/)
 * [mike-rsi](https://github.com/mike-rsi)
 * [Salko Dmytro](http://salko.org.ua/)
+* [Nils Rückmann](https://github.com/nueckman)
