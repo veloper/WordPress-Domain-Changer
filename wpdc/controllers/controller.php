@@ -101,7 +101,8 @@ class Controller extends BaseController {
       return $this->redirectToAction( "database" );
     }
 
-    if ( empty( $this->db()->getTables() ) ) {
+    $tables = $this->db()->getTables();
+    if ( empty( $tables ) ) {
       $this->addFlash( "error", 'Database Error: Could not find any tables that start with the "' . $post["table_prefix"] . '" prefix.' );
       return $this->redirectToAction( "database" );
     }
@@ -302,7 +303,8 @@ class Controller extends BaseController {
       $this->redirectToAction( "database" );
     }
 
-    if ( $this->isTableSelectionsRequired() && empty( $this->getSelectedTableNames() ) ) {
+	$selectedTableNames = $this->getSelectedTableNames();
+    if ( $this->isTableSelectionsRequired() && empty( $selectedTableNames ) ) {
       $this->addFlash( "error", "At least one table must be selected." );
       $this->redirectToAction( "tables" );
     }
@@ -315,6 +317,7 @@ class Controller extends BaseController {
 
     $this->data["logout_path"] = $this->getActionUrl( "logout" );
 
+	$selectedTableNames = $this->getSelectedTableNames();
     $this->data["nav"] = array(
       "database" => array(
         "path"     => $this->getActionUrl( "database" ),
@@ -328,18 +331,20 @@ class Controller extends BaseController {
       ),
       "change" => array(
         "path"     => $this->getActionUrl( "changeSetup" ),
-        "disabled" => empty( $this->getSelectedTableNames() )
+        "disabled" => empty( $selectedTableNames )
       )
     );
   }
 
   public function isDatabaseConnectionRequired() {
-    $options = $this->getRequestRoute()["options"];
+  	$route = $this->getRequestRoute();
+    $options = $route["options"];
     return isset( $options["db"] ) ? (bool) $options["db"] : false;
   }
 
   public function isTableSelectionsRequired() {
-    $options = $this->getRequestRoute()["options"];
+  	$route = $this->getRequestRoute();
+    $options = $route["options"];
     return isset( $options["tables"] ) ? (bool) $options["tables"] : false;
   }
 
