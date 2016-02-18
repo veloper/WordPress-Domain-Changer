@@ -109,14 +109,14 @@ class Database {
         );
         // Connection Test
         if ( mysqli_connect_errno() ) {
-          throw Exception( "(#" . mysqli_connect_errno() . ") " . mysqli_connect_error() );
+          throw new Exception( "(#" . mysqli_connect_errno() . ") " . mysqli_connect_error() );
         } else {
           $this->is_connected = true;
         }
 
         // Charset
         $this->connection->set_charset( "utf8" );
-        if ( $this->connection->error ) throw Exception( "Error loading character set utf8: {$mysqli->error}" );
+        if ( $this->connection->error ) throw new Exception( "Error loading character set utf8: {$mysqli->error}" );
 
       } catch ( Exception $e ) {
         $this->last_error = $e->getMessage();
