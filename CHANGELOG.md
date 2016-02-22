@@ -1,5 +1,8 @@
 # Change Log
 
+## 2.0.2 - February 22nd, 2016
+* Fixed minor syntax issues around thrown PHP Exceptions. (Stuart Maynes PR #21)
+
 ## 2.0.1 - December 11th, 2014
 
 * Updated README.md to fix blog post link and grammar.
