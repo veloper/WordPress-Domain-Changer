@@ -7,7 +7,7 @@ before_install:
   - "sh -e /etc/init.d/xvfb start"
   - sudo apt-get update -qq
   - sudo apt-get install python-software-properties
-  - sudo echo | sudo add-apt-repository ppa:ondrej/php5;
+  - sudo echo | sudo add-apt-repository ppa:ondrej/php;
   - sudo apt-get update -qq
   - sudo apt-get install curl php5 php5-cli php5-mysql
   - cd ./tests
